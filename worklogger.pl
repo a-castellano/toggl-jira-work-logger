@@ -12,12 +12,14 @@ use JSON::Parse ':all';
 use JSON;
 use JIRA::REST;
 use DateTime;
+use DateTime::Format::Strptime qw(  );
 use Carp qw(croak);
 
 use Toggl::Wrapper;
 use Data::Dumper;
 
-use constant USER_AGENT => "toggl-jira-work-logger";
+use constant USER_AGENT       => "toggl-jira-work-logger";
+use constant JIRA_API_SUB_URL => "/rest/api/2";
 
 sub make_api_call {
     my $call      = shift;
@@ -32,7 +34,7 @@ sub make_api_call {
 
     my $request = HTTP::Request->new( $call->{type} => "$call->{url}" );
 
-    $request->authorization_basic( "$auth->{user}", "$auth->{password}" );
+    $request->authorization_basic( $auth->{email}, $auth->{password} );
 
     # Headers
     if (@$headers) {
@@ -42,18 +44,9 @@ sub make_api_call {
     }
 
     # Data
-    if (%$data) {
-        foreach my $key ( keys %$data ) {
-            $json_data = "$json_data \"$key\":$data->{$key},";
-        }
-        $json_data = substr( $json_data, 0, -1 );
-        $json_data = "{$json_data}";
-        $request->content($json_data);
-    }
-    else {
-        $request->content("");
-        $request->content_length('0');
-    }
+    $request->content( encode_json $data);
+
+    #die Dumper $request;
     my $response = $wrapper->request($request);
     if ( $response->is_success ) {
         $response = $response->decoded_content;
@@ -74,24 +67,31 @@ sub make_api_call {
 }
 
 sub work_log {
-    my ( $url, $user, $password, $issue_code, $time_spent, $comment ) = @_;
+    my ( $url, $email, $user, $password, $issue_code, $time_spent, $comment ) =
+      @_;
 
+    my %author;
+    $author{self} =
+      join( '', ( $url, JIRA_API_SUB_URL, '/user?username=', $user ) );
     my $response;
 
     $response = make_api_call(
         {
             type => 'POST',
-            url  => join( '', ( $url, '/issue/', $issue_code, '/worklog' ) ),
+            url  => join( '',
+                ( $url, JIRA_API_SUB_URL, '/issue/', $issue_code, '/worklog' )
+            ),
             auth => {
-                user => $user,
-                password => $password ,
+                email    => $email,
+                password => $password,
             },
             headers => [
                 { 'Content-Type' => 'application/json' },
                 { 'Accept'       => 'application/json' },
             ],
             data => {
-                started   => DateTime->now()->iso8601(),
+                author    => \%author,
+                started   => "2018-03-01T21:59:31.190+0000",
                 timeSpent => $time_spent,
                 comment   => $comment,
             },
@@ -102,15 +102,133 @@ sub work_log {
 
 #Main
 
+#Get environment variables
+
 my $jira_url      = $ENV{'JIRA_URL'};
 my $jira_email    = $ENV{'JIRA_EMAIL'};
-my $jira_user    = $ENV{'JIRA_USER'};
+my $jira_user     = $ENV{'JIRA_USER'};
 my $jira_password = $ENV{'JIRA_PASSWORD'};
 
 my $toggl_api_token = $ENV{'TOGGL_API_KEY'};
 
-my $issue_code = $ENV{'JIRA_EXAMPLE_ISSUE'};
+# Process args
+my $argssize;
+my @args;
 
-my $comment = "Test";
+my @dates;    #start_date - stop_data
 
-work_log( $jira_url, $jira_user, $jira_password, $issue_code, "5m", "Test" );
+$argssize = scalar @ARGV;
+
+if ( $argssize != 2 ) {
+    print STDERR
+"This script only accepts two args, date and rounded time.\n";
+    exit -1;
+}
+
+for my $arg ( @ARGV[ 0 .. 1 ] ) {
+    my ( $y, $m, $d ) = $arg =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
+      or die "$arg is not a valid data.";
+
+    push(
+        @dates,
+        DateTime->new(
+            year      => $y,
+            month     => $m,
+            day       => $d,
+            time_zone => 'local',
+        )
+    );
+}
+
+if ( DateTime->compare( $dates[0], $dates[1] ) == 1 ) {
+    die "Start date cannot be greater than end date.";
+}
+else {
+    $dates[1] = $dates[1]->add( days => 1 );
+}
+
+my $rounded_time = $ARGV[2];
+
+my $tggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
+
+#get time day by day
+
+my @entries = @{
+    $tggl->get_time_entries(
+        {
+            start => $dates[0],
+            stop  => $dates[1]
+        }
+    )
+};
+
+# total work log mut be multiple of $rounded_time
+my %totol_work_by_issue;
+
+my @processed_entries;
+my @processed_ids;
+
+@processed_entries =
+  sort { $a->{id} <=> $b->{id} } @processed_entries;
+
+for my $entry (@entries) {
+    if (
+        $entry->{'duration'} > 300    # Ignore entries brief than 5 minutes
+        and ( !exists $entry->{"tags"}
+            or grep { $_ ne "logged" } @{ $entry->{"tags"} } )
+      )
+    {
+        $entry->{"description"} =~ /^([A-Z]*-[0-9]*) /;
+        my $issue_id = $1;
+        my $duration = int( $entry->{'duration'} / 60 );
+
+        if ( !exists $totol_work_by_issue{$issue_id} ) {
+            $totol_work_by_issue{$issue_id} = { total_time => 0 };
+        }
+        $totol_work_by_issue{$issue_id}{total_time} += $duration;
+
+        print "Issue $entry->{'description'}\n";
+        print "\tStarted at $entry->{'start'}\n";
+        print "\tEnded at $entry->{'stop'}\n";
+        print "\tWith the following duration: $duration minutes.\n";
+
+        print "\tWhat did you do? -> ";
+        my $description = <STDIN>;
+        print "\n";
+        push(
+            @processed_entries,
+            {
+                issue_id    => $issue_id,
+                duration    => $duration,
+                description => $description,
+                time_entry  => $entry,
+            }
+        );
+    }
+}
+
+foreach my $key ( keys %totol_work_by_issue ) {
+
+    my $extra_time;
+
+    if ( $totol_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
+        $extra_time =
+          ( int( $totol_work_by_issue{$key}{total_time} / $rounded_time ) + 1 )
+          * 15 - $totol_work_by_issue{$key}{total_time};
+    }
+    foreach my $entry (@processed_entries) {
+        if ( $entry->{issue_id} eq $key ) {
+            $entry->{duration} += $extra_time;
+            last;
+        }
+    }
+}
+
+foreach my $entry (@processed_entries) {
+    work_log( $jira_url, $jira_email, $jira_user, $jira_password,
+        $entry->{issue_id}, $entry->{duration}, $entry->{description} );
+}
+
+# Tag logged entries
+
+print "Done";
