@@ -13,6 +13,7 @@ use JSON;
 use JIRA::REST;
 use DateTime;
 use DateTime::Format::Strptime qw(  );
+use Date::Calc qw/Delta_Days/;
 use Carp qw(croak);
 
 use Toggl::Wrapper;
@@ -46,7 +47,6 @@ sub make_api_call {
     # Data
     $request->content( encode_json $data);
 
-    #die Dumper $request;
     my $response = $wrapper->request($request);
     if ( $response->is_success ) {
         $response = $response->decoded_content;
@@ -119,9 +119,9 @@ my @dates;    #start_date - stop_data
 
 $argssize = scalar @ARGV;
 
-if ( $argssize != 2 ) {
+if ( $argssize != 3 ) {
     print STDERR
-"This script only accepts two args, date and rounded time.\n";
+"This script only accepts three args, start date, end date and rounded time.\n";
     exit -1;
 }
 
@@ -140,95 +140,130 @@ for my $arg ( @ARGV[ 0 .. 1 ] ) {
     );
 }
 
-if ( DateTime->compare( $dates[0], $dates[1] ) == 1 ) {
+my $first_date = $dates[0];
+my $last_date  = $dates[1];
+
+if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
     die "Start date cannot be greater than end date.";
 }
-else {
-    $dates[1] = $dates[1]->add( days => 1 );
-}
+
+#else {
+#    $dates[1] = $dates[1]->add( days => 1 );
+#}
 
 my $rounded_time = $ARGV[2];
 
+my $number_of_days = $last_date->delta_days($first_date)->days();
+
 my $tggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
 
-#get time day by day
+my $current_date = $first_date;
 
-my @entries = @{
-    $tggl->get_time_entries(
-        {
-            start => $dates[0],
-            stop  => $dates[1]
-        }
-    )
-};
+# Process entries day by day
 
-# total work log mut be multiple of $rounded_time
-my %totol_work_by_issue;
+do {
 
-my @processed_entries;
-my @processed_ids;
+    print "Processing entries from ", $current_date->strftime('%Y-%m-%d'), "\n";
 
-@processed_entries =
-  sort { $a->{id} <=> $b->{id} } @processed_entries;
+    my $next_date = $current_date->clone()->add( days => 1 );
 
-for my $entry (@entries) {
-    if (
-        $entry->{'duration'} > 300    # Ignore entries brief than 5 minutes
-        and ( !exists $entry->{"tags"}
-            or grep { $_ ne "logged" } @{ $entry->{"tags"} } )
-      )
-    {
-        $entry->{"description"} =~ /^([A-Z]*-[0-9]*) /;
-        my $issue_id = $1;
-        my $duration = int( $entry->{'duration'} / 60 );
-
-        if ( !exists $totol_work_by_issue{$issue_id} ) {
-            $totol_work_by_issue{$issue_id} = { total_time => 0 };
-        }
-        $totol_work_by_issue{$issue_id}{total_time} += $duration;
-
-        print "Issue $entry->{'description'}\n";
-        print "\tStarted at $entry->{'start'}\n";
-        print "\tEnded at $entry->{'stop'}\n";
-        print "\tWith the following duration: $duration minutes.\n";
-
-        print "\tWhat did you do? -> ";
-        my $description = <STDIN>;
-        print "\n";
-        push(
-            @processed_entries,
+    my @entries = @{
+        $tggl->get_time_entries(
             {
-                issue_id    => $issue_id,
-                duration    => $duration,
-                description => $description,
-                time_entry  => $entry,
+                start => $current_date,
+                stop  => $next_date,
+            }
+        )
+    };
+
+    # total work log mut be multiple of $rounded_time
+    my %totol_work_by_issue;
+
+    my @processed_entries;
+    my @processed_ids;
+
+    @processed_entries =
+      sort { $a->{id} <=> $b->{id} } @processed_entries;
+
+    for my $entry (@entries) {
+        if (
+            $entry->{duration} > 300    # Ignore entries brief than 5 minutes
+            and ( !exists $entry->{tags}
+                or grep { $_ ne "logged" } @{ $entry->{tags} } )
+          )
+        {
+            $entry->{description} =~ /^([A-Z]*-[0-9]*) /;
+            my $issue_id = $1;
+            my $duration = int( $entry->{'duration'} / 60 );
+
+            if ( !exists $totol_work_by_issue{$issue_id} ) {
+                $totol_work_by_issue{$issue_id} = { total_time => 0 };
+            }
+            $totol_work_by_issue{$issue_id}{total_time} += $duration;
+
+            print "Issue $entry->{description}\n";
+            print "\tStarted at $entry->{start}\n";
+            print "\tEnded at $entry->{stop}\n";
+            print "\tWith the following duration: $duration minutes.\n";
+
+            print "\tWhat did you do? -> ";
+            my $description = <STDIN>;
+            print "\n";
+            push(
+                @processed_entries,
+                {
+                    issue_id    => $issue_id,
+                    duration    => $duration,
+                    description => $description,
+                    time_entry  => $entry,
+                    id          => $entry->{id}
+                }
+            );
+        }
+    }
+
+    foreach my $key ( keys %totol_work_by_issue ) {
+
+        my $extra_time;
+
+        if ( $totol_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
+            $extra_time =
+              (
+                int( $totol_work_by_issue{$key}{total_time} / $rounded_time ) +
+                  1 ) * 15 -
+              $totol_work_by_issue{$key}{total_time};
+        }
+        foreach my $entry (@processed_entries) {
+            if ( $entry->{issue_id} eq $key ) {
+                $entry->{duration} += $extra_time;
+                last;
+            }
+        }
+    }
+
+    if ( scalar @processed_entries ) {
+        print "Sending Worklogs...";
+        my @entry_ids;
+        foreach my $entry (@processed_entries) {
+            work_log( $jira_url, $jira_email, $jira_user, $jira_password,
+                $entry->{issue_id}, $entry->{duration}, $entry->{description} );
+            push( @entry_ids, int( $entry->{id} ) );
+        }
+
+        $tggl->bulk_update_time_entries_tags(
+            {
+                time_entry_ids => \@entry_ids,
+                tags           => ["logged"],
+                tag_action     => "add",
             }
         );
+
+        print "Done.\n";
     }
-}
-
-foreach my $key ( keys %totol_work_by_issue ) {
-
-    my $extra_time;
-
-    if ( $totol_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
-        $extra_time =
-          ( int( $totol_work_by_issue{$key}{total_time} / $rounded_time ) + 1 )
-          * 15 - $totol_work_by_issue{$key}{total_time};
+    else {
+        print "There was no entries for that date.\n";
     }
-    foreach my $entry (@processed_entries) {
-        if ( $entry->{issue_id} eq $key ) {
-            $entry->{duration} += $extra_time;
-            last;
-        }
-    }
-}
+    $current_date = $next_date;
+} while ( DateTime->compare( $current_date, $last_date ) < 1 );
 
-foreach my $entry (@processed_entries) {
-    work_log( $jira_url, $jira_email, $jira_user, $jira_password,
-        $entry->{issue_id}, $entry->{duration}, $entry->{description} );
-}
-
-# Tag logged entries
-
-print "Done";
+print "All Done\n";
