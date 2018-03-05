@@ -67,7 +67,7 @@ sub make_api_call {
 }
 
 sub work_log {
-    my ( $url, $email, $user, $password, $issue_code, $time_spent, $comment ) =
+    my ( $url, $email, $user, $password, $issue_code,$started, $time_spent, $comment ) =
       @_;
 
     my %author;
@@ -91,7 +91,7 @@ sub work_log {
             ],
             data => {
                 author    => \%author,
-                started   => "2018-03-01T21:59:31.190+0000",
+                started   => $started,
                 timeSpent => $time_spent,
                 comment   => $comment,
             },
@@ -146,10 +146,6 @@ my $last_date  = $dates[1];
 if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
     die "Start date cannot be greater than end date.";
 }
-
-#else {
-#    $dates[1] = $dates[1]->add( days => 1 );
-#}
 
 my $rounded_time = $ARGV[2];
 
@@ -213,6 +209,7 @@ do {
                 @processed_entries,
                 {
                     issue_id    => $issue_id,
+                    started     => $entry->{start} =~ s/\+(\d\d):(\d\d$)/\.0\+$1$2/gr,
                     duration    => $duration,
                     description => $description,
                     time_entry  => $entry,
@@ -245,11 +242,16 @@ do {
         print "Sending Worklogs...";
         my @entry_ids;
         foreach my $entry (@processed_entries) {
-            work_log( $jira_url, $jira_email, $jira_user, $jira_password,
-                $entry->{issue_id}, $entry->{duration}, $entry->{description} );
+            work_log(
+                $jira_url,          $jira_email,
+                $jira_user,         $jira_password,
+                $entry->{issue_id}, $entry->{started},
+                $entry->{duration}, $entry->{description}
+            );
             push( @entry_ids, int( $entry->{id} ) );
         }
 
+        print "Done.\n";
         $tggl->bulk_update_time_entries_tags(
             {
                 time_entry_ids => \@entry_ids,
@@ -258,7 +260,8 @@ do {
             }
         );
 
-        print "Done.\n";
+        print "Entries logged."
+
     }
     else {
         print "There was no entries for that date.\n";
