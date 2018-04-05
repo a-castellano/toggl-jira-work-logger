@@ -67,8 +67,9 @@ sub make_api_call {
 }
 
 sub work_log {
-    my ( $url, $email, $user, $password, $issue_code,$started, $time_spent, $comment ) =
-      @_;
+    my ( $url, $email, $user, $password, $issue_code, $started, $time_spent,
+        $comment )
+      = @_;
 
     my %author;
     $author{self} =
@@ -173,7 +174,7 @@ do {
     };
 
     # total work log mut be multiple of $rounded_time
-    my %totol_work_by_issue;
+    my %total_work_by_issue;
 
     my @processed_entries;
     my @processed_ids;
@@ -186,49 +187,61 @@ do {
             $entry->{duration} > 300    # Ignore entries brief than 5 minutes
             and ( !exists $entry->{tags}
                 or grep { $_ ne "logged" } @{ $entry->{tags} } )
+            and exists $entry->{description}
           )
         {
-            $entry->{description} =~ /^([A-Z]*-[0-9]*) /;
-            my $issue_id = $1;
-            my $duration = int( $entry->{'duration'} / 60 );
+            if ( $entry->{description} =~ /^([A-Z]*-[0-9]*) / ) {
+                my $issue_id = $1;
 
-            if ( !exists $totol_work_by_issue{$issue_id} ) {
-                $totol_work_by_issue{$issue_id} = { total_time => 0 };
-            }
-            $totol_work_by_issue{$issue_id}{total_time} += $duration;
+                my $duration = int( $entry->{'duration'} / 60 );
 
-            print "Issue $entry->{description}\n";
-            print "\tStarted at $entry->{start}\n";
-            print "\tEnded at $entry->{stop}\n";
-            print "\tWith the following duration: $duration minutes.\n";
-
-            print "\tWhat did you do? -> ";
-            my $description = <STDIN>;
-            print "\n";
-            push(
-                @processed_entries,
-                {
-                    issue_id    => $issue_id,
-                    started     => $entry->{start} =~ s/\+(\d\d):(\d\d$)/\.0\+$1$2/gr,
-                    duration    => $duration,
-                    description => $description,
-                    time_entry  => $entry,
-                    id          => $entry->{id}
+                if ( !exists $total_work_by_issue{$issue_id} ) {
+                    $total_work_by_issue{$issue_id} = { total_time => 0 };
                 }
-            );
+                $total_work_by_issue{$issue_id}{total_time} += $duration;
+
+                print "Issue $entry->{description}\n";
+                print "\tStarted at $entry->{start}\n";
+                print "\tEnded at $entry->{stop}\n";
+                print "\tWith the following duration: $duration minutes.\n";
+
+                my $description = "";
+                do {
+                    print "\tWhat did you do? -> ";
+                    $description = <STDIN>;
+                    print "\n";
+                    if ( $description =~ /^\s*$/ ) {
+                        print
+"\nYou Must provide a description for each time entry!\n";
+                    }
+                } while ( $description =~ /^\s*$/ );
+                push(
+                    @processed_entries,
+                    {
+                        issue_id => $issue_id,
+                        started  => $entry->{start} =~
+                          s/\+(\d\d):(\d\d$)/\.0\+$1$2/gr,
+                        duration    => $duration,
+                        description => $description,
+                        time_entry  => $entry,
+                        id          => $entry->{id}
+                    }
+                );
+
+            }
         }
     }
 
-    foreach my $key ( keys %totol_work_by_issue ) {
+    foreach my $key ( keys %total_work_by_issue ) {
 
-        my $extra_time;
+        my $extra_time = 0;
 
-        if ( $totol_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
+        if ( $total_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
             $extra_time =
               (
-                int( $totol_work_by_issue{$key}{total_time} / $rounded_time ) +
+                int( $total_work_by_issue{$key}{total_time} / $rounded_time ) +
                   1 ) * 15 -
-              $totol_work_by_issue{$key}{total_time};
+              $total_work_by_issue{$key}{total_time};
         }
         foreach my $entry (@processed_entries) {
             if ( $entry->{issue_id} eq $key ) {
