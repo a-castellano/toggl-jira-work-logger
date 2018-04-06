@@ -67,13 +67,33 @@ sub make_api_call {
 }
 
 sub work_log {
-    my ( $url, $email, $user, $password, $issue_code, $started, $time_spent,
-        $comment )
-      = @_;
+    my (
+        $url,        $email,      $user,
+        $password,   $issue_code, $started,
+        $time_spent, $comment,    $issue_visibility
+    ) = @_;
 
     my %author;
     $author{self} =
       join( '', ( $url, JIRA_API_SUB_URL, '/user?username=', $user ) );
+
+    my %visibility;
+
+    my %data = (
+        author    => \%author,
+        started   => $started,
+        timeSpent => $time_spent,
+        comment   => $comment,
+    );
+
+    print "\nVISI ->  $issue_visibility\n";
+
+#    if ( $issue_visibility ne "" ) {
+        $visibility{type}  = "group";
+        $visibility{value} = "$issue_visibility";
+        $data{visibility}  = \%visibility;
+#    }
+
     my $response;
 
     $response = make_api_call(
@@ -90,12 +110,7 @@ sub work_log {
                 { 'Content-Type' => 'application/json' },
                 { 'Accept'       => 'application/json' },
             ],
-            data => {
-                author    => \%author,
-                started   => $started,
-                timeSpent => $time_spent,
-                comment   => $comment,
-            },
+            data => \%data,
         }
     );
 
@@ -120,9 +135,9 @@ my @dates;    #start_date - stop_data
 
 $argssize = scalar @ARGV;
 
-if ( $argssize != 3 ) {
+if ( $argssize != 3 and $argssize != 4 ) {
     print STDERR
-"This script only accepts three args, start date, end date and rounded time.\n";
+"This script only accepts three args, start date, end date and rounded time. You can also set an optional visibility role.\n";
     exit -1;
 }
 
@@ -149,6 +164,9 @@ if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
 }
 
 my $rounded_time = $ARGV[2];
+
+my $visibility = "public";
+$visibility = $ARGV[3] if ( $argssize == 4 );
 
 my $number_of_days = $last_date->delta_days($first_date)->days();
 
@@ -215,16 +233,25 @@ do {
 "\nYou Must provide a description for each time entry!\n";
                     }
                 } while ( $description =~ /^\s*$/ );
+
+                print "\tSet visibility (default is $visibility):";
+                my $issue_visibility = <STDIN>;
+                if (   $issue_visibility =~ /^\s*$/ or $issue_visibility eq $visibility )
+                {
+                    $issue_visibility = $visibility;
+                }
+
                 push(
                     @processed_entries,
                     {
                         issue_id => $issue_id,
                         started  => $entry->{start} =~
                           s/\+(\d\d):(\d\d$)/\.0\+$1$2/gr,
-                        duration    => $duration,
-                        description => $description,
-                        time_entry  => $entry,
-                        id          => $entry->{id}
+                        duration         => $duration,
+                        description      => $description,
+                        time_entry       => $entry,
+                        id               => $entry->{id},
+                        issue_visibility => $issue_visibility
                     }
                 );
 
@@ -259,7 +286,8 @@ do {
                 $jira_url,          $jira_email,
                 $jira_user,         $jira_password,
                 $entry->{issue_id}, $entry->{started},
-                $entry->{duration}, $entry->{description}
+                $entry->{duration}, $entry->{description},
+                $entry->{issue_visibility}
             );
             push( @entry_ids, int( $entry->{id} ) );
         }
