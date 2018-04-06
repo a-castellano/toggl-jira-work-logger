@@ -22,6 +22,14 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 
 ## Usage
 
+**worklogger.pl** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
+
+* **JIRA_URL** - Your Organization JIRA url.
+* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA accunt. 
+* **JIRA_USER** - Your username
+* **JIRA_PASSWORD** - Your Password
+* **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
+
 **worklogger.pl** needs three arguments to work
 * Start Date.
 * End Date.
@@ -29,8 +37,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 
 Optionaly your are able to set a default visibility group for your logs, by default this field is empyty so visibility value is *empty*. The visibility groups are has to have the same name that they have in your JIRA board.
 
-Let's see come examples:
-
+Let's see some examples:
 ```bash
 perl worklogger.pl 2018-04-05 2018-04-05 15
 Processing entries from 2018-04-05
@@ -62,8 +69,16 @@ Sending Worklogs...Done.
 Entries logged.All Done
 ```
 
-You are also able to set another default visibility team
-
+You are also able to set another default visibility team:
 ```bash
 perl worklogger.pl 2018-04-05 2018-04-05 15 developers
+```
+Finally, each logged time entry is marked as "logged" in your toggl dashboard and it won't be logged again:
+```bash
+perl worklogger.pl 2018-04-03 2018-04-04 15
+Processing entries from 2018-04-03
+There was no entries for that date.
+Processing entries from 2018-04-04
+There was no entries for that date.
+All Done
 ```
