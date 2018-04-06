@@ -22,3 +22,48 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 
 ## Usage
 
+**worklogger.pl** needs three arguments to work
+* Start Date.
+* End Date.
+* Rounded time (for each issue, total time of entries will be rounded to that time).
+
+Optionaly your are able to set a default visibility group for your logs, by default this field is empyty so visibility value is *empty*. The visibility groups are has to have the same name that they have in your JIRA board.
+
+Let's see come examples:
+
+```bash
+perl worklogger.pl 2018-04-05 2018-04-05 15
+Processing entries from 2018-04-05
+Issue IT-761 Found error on in my app
+	Started at 2018-04-05T16:22:48+00:00
+	Ended at 2018-04-05T16:30:01+00:00
+	With the following duration: 7 minutes.
+	What did you do? -> Fix some issues
+
+	Set visibility (default is public):
+
+Issue IT-762 Test issue
+	Started at 2018-04-05T16:30:15+00:00
+	Ended at 2018-04-05T16:38:52+00:00
+	With the following duration: 8 minutes.
+	What did you do? -> Customer issues
+
+	Set visibility (default is public):it-team
+
+Issue IT-762 Test issue
+	Started at 2018-04-05T16:38:57+00:00
+	Ended at 2018-04-05T17:45:03+00:00
+	With the following duration: 66 minutes.
+	What did you do? -> OH, there was another bug.
+
+	Set visibility (default is public):developers
+
+Sending Worklogs...Done.
+Entries logged.All Done
+```
+
+You are also able to set another default visibility team
+
+```bash
+perl worklogger.pl 2018-04-05 2018-04-05 15 developers
+```
