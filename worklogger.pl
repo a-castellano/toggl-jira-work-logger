@@ -10,7 +10,6 @@ use HTTP::Request;
 use HTTP::Response;
 use JSON::Parse ':all';
 use JSON;
-use JIRA::REST;
 use DateTime;
 use DateTime::Format::Strptime qw(  );
 use Date::Calc qw/Delta_Days/;
@@ -86,13 +85,11 @@ sub work_log {
         comment   => $comment,
     );
 
-    print "\nVISI ->  $issue_visibility\n";
-
-#    if ( $issue_visibility ne "" ) {
+    if ( $issue_visibility ne "" ) {
         $visibility{type}  = "group";
         $visibility{value} = "$issue_visibility";
         $data{visibility}  = \%visibility;
-#    }
+    }
 
     my $response;
 
@@ -137,7 +134,7 @@ $argssize = scalar @ARGV;
 
 if ( $argssize != 3 and $argssize != 4 ) {
     print STDERR
-"This script only accepts three args, start date, end date and rounded time. You can also set an optional visibility role.\n";
+"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility role.\nBy default, visibility is set to 'public'.\n";
     exit -1;
 }
 
@@ -165,11 +162,16 @@ if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
 
 my $rounded_time = $ARGV[2];
 
+# Set default visibility, if there is a fourth arg, it will be visibility default value
+
 my $visibility = "public";
 $visibility = $ARGV[3] if ( $argssize == 4 );
 
+# All args parsed, count how many days have to be processed
+
 my $number_of_days = $last_date->delta_days($first_date)->days();
 
+# Create toggl instance
 my $tggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
 
 my $current_date = $first_date;
@@ -191,7 +193,7 @@ do {
         )
     };
 
-    # total work log mut be multiple of $rounded_time
+    # total work log must be multiple of $rounded_time
     my %total_work_by_issue;
 
     my @processed_entries;
@@ -203,9 +205,12 @@ do {
     for my $entry (@entries) {
         if (
             $entry->{duration} > 300    # Ignore entries brief than 5 minutes
-            and ( !exists $entry->{tags}
-                or grep { $_ ne "logged" } @{ $entry->{tags} } )
-            and exists $entry->{description}
+            and (
+                !exists $entry->{tags}    # And entries already logged
+                or grep { $_ ne "logged" } @{ $entry->{tags} }
+            )
+            and exists $entry
+            ->{description}   # Entries whithout description must be ignored too
           )
         {
             if ( $entry->{description} =~ /^([A-Z]*-[0-9]*) / ) {
@@ -218,11 +223,13 @@ do {
                 }
                 $total_work_by_issue{$issue_id}{total_time} += $duration;
 
+                # Shows entry info to user
                 print "Issue $entry->{description}\n";
                 print "\tStarted at $entry->{start}\n";
                 print "\tEnded at $entry->{stop}\n";
                 print "\tWith the following duration: $duration minutes.\n";
 
+                # User must specify what he/she did in every time entry
                 my $description = "";
                 do {
                     print "\tWhat did you do? -> ";
@@ -236,9 +243,12 @@ do {
 
                 print "\tSet visibility (default is $visibility):";
                 my $issue_visibility = <STDIN>;
-                if (   $issue_visibility =~ /^\s*$/ or $issue_visibility eq $visibility )
-                {
+                chomp $issue_visibility;
+                if ( $issue_visibility =~ /^\s*$/ ) {
                     $issue_visibility = $visibility;
+                }
+                if ( $issue_visibility eq "public" ) {
+                    $issue_visibility = "";
                 }
 
                 push(
@@ -254,6 +264,7 @@ do {
                         issue_visibility => $issue_visibility
                     }
                 );
+                print "\n";
 
             }
         }
