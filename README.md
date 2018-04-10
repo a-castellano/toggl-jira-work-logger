@@ -35,7 +35,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 * End Date.
 * Rounded time (for each issue, total time of entries will be rounded to that time).
 
-Optionaly your are able to set a default visibility group for your logs, by default this field is empyty so visibility value is *empty*. The visibility groups are has to have the same name that they have in your JIRA board.
+Optionaly your are able to set a default visibility group for your logs, by default this field is empyty so visibility value is *public*. The visibility groups are has to have the same name that they have in your JIRA board.
 
 Let's see some examples:
 ```bash
