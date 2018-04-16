@@ -213,7 +213,7 @@ do {
             ->{description}   # Entries whithout description must be ignored too
           )
         {
-            if ( $entry->{description} =~ /^([A-Z0-9]+-[0-9]+) / ) {
+            if ( $entry->{description} =~ /^([A-Z0-9]+-[0-9]+)\w*$/ ) {
                 my $issue_id = $1;
 
                 my $duration = int( $entry->{'duration'} / 60 );
