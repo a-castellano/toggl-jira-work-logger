@@ -2,6 +2,8 @@
 
 # Álvaro Castellano Vela <https://github.com/a-castellano>
 
+use utf8;
+
 use strict;
 use warnings;
 
@@ -14,6 +16,7 @@ use DateTime;
 use DateTime::Format::Strptime qw(  );
 use Date::Calc qw/Delta_Days/;
 use Carp qw(croak);
+use Try::Tiny;
 
 use Toggl::Wrapper;
 use Data::Dumper;
@@ -104,8 +107,8 @@ sub work_log {
                 password => $password,
             },
             headers => [
-                { 'Content-Type' => 'application/json' },
-                { 'Accept'       => 'application/json' },
+                { 'Content-Type' => 'application/json; charset=utf-8' },
+                { 'Accept'       => 'application/json; charset=utf-8' },
             ],
             data => \%data,
         }
@@ -204,7 +207,7 @@ do {
 
     for my $entry (@entries) {
         if (
-            $entry->{duration} > 300    # Ignore entries brief than 5 minutes
+            $entry->{duration} >= 300    # Ignore entries brief than 5 minutes
             and (
                 !exists $entry->{tags}    # And entries already logged
                 or grep { $_ ne "logged" } @{ $entry->{tags} }
@@ -225,6 +228,10 @@ do {
 
                 # Shows entry info to user
                 print "Issue $entry->{description}\n";
+                if ( grep { $_ eq "errored" } @{ $entry->{tags} } ) {
+                    print
+"\t** ERRORED: This issue was already tried to be registered but it failed. **\n";
+                }
                 print "\tStarted at $entry->{start}\n";
                 print "\tEnded at $entry->{stop}\n";
                 print "\tWith the following duration: $duration minutes.\n";
@@ -251,6 +258,10 @@ do {
                     $issue_visibility = "";
                 }
 
+                # Set time entries duration in full minutes
+                $tggl->update_time_entry( $entry,
+                    { duration => $duration * 60 } );
+
                 push(
                     @processed_entries,
                     {
@@ -261,6 +272,7 @@ do {
                         description      => $description,
                         time_entry       => $entry,
                         id               => $entry->{id},
+                        tags             => \@{ $entry->{tags} },
                         issue_visibility => $issue_visibility
                     }
                 );
@@ -270,10 +282,11 @@ do {
         }
     }
 
+    #Round time if needed
     foreach my $key ( keys %total_work_by_issue ) {
-
         my $extra_time = 0;
 
+        # Total time in entry group must be rounded.
         if ( $total_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
             $extra_time =
               (
@@ -282,9 +295,20 @@ do {
               $total_work_by_issue{$key}{total_time};
         }
         foreach my $entry (@processed_entries) {
-            if ( $entry->{issue_id} eq $key ) {
-                $entry->{duration} += $extra_time;
-                last;
+
+            # If entry has not been tagged as 'errored'
+            # It was already been rounded if needed.
+            if ( !( grep { $_ eq "errored" } @{ $entry->{tags} } ) ) {
+                if ( $entry->{issue_id} eq $key ) {
+                    $entry->{duration} += $extra_time;
+
+                   # After updating entry duration, modify rgistered Toggl entry
+                   # Time entry duration must be specified in secondss
+                    $tggl->update_time_entry( $entry->{time_entry},
+                        { duration => $entry->{duration} * 60 } );
+                    last;
+                }
+
             }
         }
     }
@@ -292,25 +316,49 @@ do {
     if ( scalar @processed_entries ) {
         print "Sending Worklogs...";
         my @entry_ids;
+        my @failed_ids;
         foreach my $entry (@processed_entries) {
-            work_log(
-                $jira_url,          $jira_email,
-                $jira_user,         $jira_password,
-                $entry->{issue_id}, $entry->{started},
-                $entry->{duration}, $entry->{description},
-                $entry->{issue_visibility}
-            );
-            push( @entry_ids, int( $entry->{id} ) );
+            my $no_errors = 0;
+            try {
+                work_log(
+                    $jira_url,          $jira_email,
+                    $jira_user,         $jira_password,
+                    $entry->{issue_id}, $entry->{started},
+                    $entry->{duration}, $entry->{description},
+                    $entry->{issue_visibility}
+                );
+                $no_errors = 1;
+            }
+            catch {
+                warn
+"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your Toggl dashboard.";
+                $no_errors = 0;
+                push( @failed_ids, int( $entry->{id} ) );
+            };
+            if ($no_errors) {
+                push( @entry_ids, int( $entry->{id} ) );
+            }
         }
 
         print "Done.\n";
-        $tggl->bulk_update_time_entries_tags(
-            {
-                time_entry_ids => \@entry_ids,
-                tags           => ["logged"],
-                tag_action     => "add",
-            }
-        );
+        if ( scalar(@entry_ids) > 0 ) {
+            $tggl->bulk_update_time_entries_tags(
+                {
+                    time_entry_ids => \@entry_ids,
+                    tags           => ["logged"],
+                    tag_action     => "add",
+                }
+            );
+        }
+        if ( scalar(@failed_ids) > 0 ) {
+            $tggl->bulk_update_time_entries_tags(
+                {
+                    time_entry_ids => \@failed_ids,
+                    tags           => ["errored"],
+                    tag_action     => "add",
+                }
+            );
+        }
 
         print "Entries logged."
 
