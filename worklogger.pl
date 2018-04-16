@@ -2,6 +2,8 @@
 
 # Álvaro Castellano Vela <https://github.com/a-castellano>
 
+use utf8;
+
 use strict;
 use warnings;
 
@@ -105,8 +107,8 @@ sub work_log {
                 password => $password,
             },
             headers => [
-                { 'Content-Type' => 'application/json' },
-                { 'Accept'       => 'application/json' },
+                { 'Content-Type' => 'application/json; charset=utf-8' },
+                { 'Accept'       => 'application/json; charset=utf-8' },
             ],
             data => \%data,
         }
@@ -226,6 +228,10 @@ do {
 
                 # Shows entry info to user
                 print "Issue $entry->{description}\n";
+                if ( grep { $_ eq "errored" } @{ $entry->{tags} } ) {
+                    print
+"\t** ERRORED: This issue was already tried to be registered but it failed. **\n";
+                }
                 print "\tStarted at $entry->{start}\n";
                 print "\tEnded at $entry->{stop}\n";
                 print "\tWith the following duration: $duration minutes.\n";
@@ -266,6 +272,7 @@ do {
                         description      => $description,
                         time_entry       => $entry,
                         id               => $entry->{id},
+                        tags => \@{ $entry->{tags} },
                         issue_visibility => $issue_visibility
                     }
                 );
@@ -278,6 +285,7 @@ do {
     foreach my $key ( keys %total_work_by_issue ) {
         my $extra_time = 0;
 
+        # Total time in entry group must be rounded.
         if ( $total_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
             $extra_time =
               (
@@ -286,14 +294,20 @@ do {
               $total_work_by_issue{$key}{total_time};
         }
         foreach my $entry (@processed_entries) {
-            if ( $entry->{issue_id} eq $key ) {
-                $entry->{duration} += $extra_time;
 
-                # After updating entry duration, modify rgistered Toggl entry
-                # Timw entry duration must be specified in secondss
-                $tggl->update_time_entry( $entry->{time_entry},
-                    { duration => $entry->{duration} * 60 } );
-                last;
+            # If entry has not been tagged as 'errored'
+            # It was already been rounded if needed.
+            if ( !( grep { $_ eq "errored"  }  @{ $entry->{tags} }) ){
+                if ( $entry->{issue_id} eq $key ) {
+                    $entry->{duration} += $extra_time;
+
+                   # After updating entry duration, modify rgistered Toggl entry
+                   # Time entry duration must be specified in secondss
+                    $tggl->update_time_entry( $entry->{time_entry},
+                        { duration => $entry->{duration} * 60 } );
+                    last;
+                }
+
             }
         }
     }
@@ -315,12 +329,12 @@ do {
                 $no_errors = 1;
             }
             catch {
-                warn "Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your Toggl dashboard.";
+                warn
+"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your Toggl dashboard.";
                 $no_errors = 0;
                 push( @failed_ids, int( $entry->{id} ) );
             };
-            if ( $no_errors ) {
-                print "la meto\n";
+            if ($no_errors) {
                 push( @entry_ids, int( $entry->{id} ) );
             }
         }
