@@ -272,7 +272,7 @@ do {
                         description      => $description,
                         time_entry       => $entry,
                         id               => $entry->{id},
-                        tags => \@{ $entry->{tags} },
+                        tags             => \@{ $entry->{tags} },
                         issue_visibility => $issue_visibility
                     }
                 );
@@ -282,6 +282,7 @@ do {
         }
     }
 
+    #Round time if needed
     foreach my $key ( keys %total_work_by_issue ) {
         my $extra_time = 0;
 
@@ -297,7 +298,7 @@ do {
 
             # If entry has not been tagged as 'errored'
             # It was already been rounded if needed.
-            if ( !( grep { $_ eq "errored"  }  @{ $entry->{tags} }) ){
+            if ( !( grep { $_ eq "errored" } @{ $entry->{tags} } ) ) {
                 if ( $entry->{issue_id} eq $key ) {
                     $entry->{duration} += $extra_time;
 
