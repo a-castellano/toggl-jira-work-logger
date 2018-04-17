@@ -242,6 +242,66 @@ my $rounded_time = shift;
 }
 
 
+sub log_entries{
+
+my $processed_entries = shift;
+my $toggl = shift;
+my $jira_url = shift;
+my $jira_email = shift;
+my $jira_user = shift;
+my $jira_password = shift;
+
+   my @processed_entries = @{ $processed_entries };
+
+
+        my @entry_ids;
+        my @failed_ids;
+        foreach my $entry (@processed_entries) {
+            my $no_errors = 0;
+            try {
+                work_log(
+                    $jira_url,          $jira_email,
+                    $jira_user,         $jira_password,
+                    $entry->{issue_id}, $entry->{started},
+                    $entry->{duration}, $entry->{description},
+                    $entry->{issue_visibility}
+                );
+                $no_errors = 1;
+            }
+            catch {
+                warn
+"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
+                $no_errors = 0;
+                push( @failed_ids, int( $entry->{id} ) );
+            };
+            if ($no_errors) {
+                push( @entry_ids, int( $entry->{id} ) );
+            }
+        }
+
+        print "Done.\n";
+        if ( scalar(@entry_ids) > 0 ) {
+            $toggl->bulk_update_time_entries_tags(
+                {
+                    time_entry_ids => \@entry_ids,
+                    tags           => ["logged"],
+                    tag_action     => "add",
+                }
+            );
+        }
+        if ( scalar(@failed_ids) > 0 ) {
+            $toggl->bulk_update_time_entries_tags(
+                {
+                    time_entry_ids => \@failed_ids,
+                    tags           => ["errored"],
+                    tag_action     => "add",
+                }
+            );
+        }
+
+
+}
+
 #Main
 
 #Get environment variables
@@ -329,51 +389,10 @@ do {
     my @processed_entries = process_time_entries(\@entries, $visibility, $toggl, $rounded_time);
 
     if ( scalar @processed_entries ) {
-        print "Sending Worklogs...";
-        my @entry_ids;
-        my @failed_ids;
-        foreach my $entry (@processed_entries) {
-            my $no_errors = 0;
-            try {
-                work_log(
-                    $jira_url,          $jira_email,
-                    $jira_user,         $jira_password,
-                    $entry->{issue_id}, $entry->{started},
-                    $entry->{duration}, $entry->{description},
-                    $entry->{issue_visibility}
-                );
-                $no_errors = 1;
-            }
-            catch {
-                warn
-"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
-                $no_errors = 0;
-                push( @failed_ids, int( $entry->{id} ) );
-            };
-            if ($no_errors) {
-                push( @entry_ids, int( $entry->{id} ) );
-            }
-        }
 
-        print "Done.\n";
-        if ( scalar(@entry_ids) > 0 ) {
-            $toggl->bulk_update_time_entries_tags(
-                {
-                    time_entry_ids => \@entry_ids,
-                    tags           => ["logged"],
-                    tag_action     => "add",
-                }
-            );
-        }
-        if ( scalar(@failed_ids) > 0 ) {
-            $toggl->bulk_update_time_entries_tags(
-                {
-                    time_entry_ids => \@failed_ids,
-                    tags           => ["errored"],
-                    tag_action     => "add",
-                }
-            );
-        }
+        print "Sending Worklogs...";
+
+        log_entries(\@processed_entries, $toggl, $jira_url, $jira_email, $jira_user, $jira_password);
 
         print "Entries logged."
 
