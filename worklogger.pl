@@ -116,107 +116,31 @@ sub work_log {
 
 }
 
-#Main
+sub process_time_entries{
 
-#Get environment variables
+my $entries = shift;
+my $visibility = shift;
+my $toggl = shift;
+my $rounded_time = shift;
 
-my $jira_url      = $ENV{'JIRA_URL'};
-my $jira_email    = $ENV{'JIRA_EMAIL'};
-my $jira_user     = $ENV{'JIRA_USER'};
-my $jira_password = $ENV{'JIRA_PASSWORD'};
+   my @entries = @{ $entries };
 
-my $toggl_api_token = $ENV{'TOGGL_API_KEY'};
-
-# Process args
-my $argssize;
-my @args;
-
-my @dates;    #start_date - stop_data
-
-$argssize = scalar @ARGV;
-
-if ( $argssize != 3 and $argssize != 4 ) {
-    print STDERR
-"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility role.\nBy default, visibility is set to 'public'.\n";
-    exit -1;
-}
-
-for my $arg ( @ARGV[ 0 .. 1 ] ) {
-    my ( $y, $m, $d ) = $arg =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
-      or die "$arg is not a valid data.";
-
-    push(
-        @dates,
-        DateTime->new(
-            year      => $y,
-            month     => $m,
-            day       => $d,
-            time_zone => 'local',
-        )
-    );
-}
-
-my $first_date = $dates[0];
-my $last_date  = $dates[1];
-
-if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
-    die "Start date cannot be greater than end date.";
-}
-
-my $rounded_time = $ARGV[2];
-
-# Set default visibility, if there is a fourth arg, it will be visibility default value
-
-my $visibility = "public";
-$visibility = $ARGV[3] if ( $argssize == 4 );
-
-# All args parsed, count how many days have to be processed
-
-my $number_of_days = $last_date->delta_days($first_date)->days();
-
-# Create toggl instance
-my $tggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
-
-my $current_date = $first_date;
-
-# Process entries day by day
-
-do {
-
-    print "Processing entries from ", $current_date->strftime('%Y-%m-%d'), "\n";
-
-    my $next_date = $current_date->clone()->add( days => 1 );
-
-    my @entries = @{
-        $tggl->get_time_entries(
-            {
-                start => $current_date,
-                stop  => $next_date,
-            }
-        )
-    };
-
-    # total work log must be multiple of $rounded_time
     my %total_work_by_issue;
-
     my @processed_entries;
-    my @processed_ids;
-
-    @processed_entries =
-      sort { $a->{id} <=> $b->{id} } @processed_entries;
 
     for my $entry (@entries) {
+
         if (
             $entry->{duration} >= 300    # Ignore entries brief than 5 minutes
             and (
                 !exists $entry->{tags}    # And entries already logged
                 or grep { $_ ne "logged" } @{ $entry->{tags} }
             )
-            and exists $entry
-            ->{description}   # Entries whithout description must be ignored too
+            and exists $entry->{description}
           )
         {
-            if ( $entry->{description} =~ /^([A-Z0-9]+-[0-9]+)\w*$/ ) {
+
+            if ( $entry->{description} =~ /^([A-Z0-9]+-[0-9]+)/ ) {
                 my $issue_id = $1;
 
                 my $duration = int( $entry->{'duration'} / 60 );
@@ -259,7 +183,7 @@ do {
                 }
 
                 # Set time entries duration in full minutes
-                $tggl->update_time_entry( $entry,
+                $toggl->update_time_entry( $entry,
                     { duration => $duration * 60 } );
 
                 push(
@@ -302,9 +226,9 @@ do {
                 if ( $entry->{issue_id} eq $key ) {
                     $entry->{duration} += $extra_time;
 
-                   # After updating entry duration, modify rgistered Toggl entry
+                   # After updating entry duration, modify rgistered toggl entry
                    # Time entry duration must be specified in secondss
-                    $tggl->update_time_entry( $entry->{time_entry},
+                    $toggl->update_time_entry( $entry->{time_entry},
                         { duration => $entry->{duration} * 60 } );
                     last;
                 }
@@ -313,8 +237,23 @@ do {
         }
     }
 
-    if ( scalar @processed_entries ) {
-        print "Sending Worklogs...";
+    return @processed_entries;
+
+}
+
+
+sub log_entries{
+
+my $processed_entries = shift;
+my $toggl = shift;
+my $jira_url = shift;
+my $jira_email = shift;
+my $jira_user = shift;
+my $jira_password = shift;
+
+   my @processed_entries = @{ $processed_entries };
+
+
         my @entry_ids;
         my @failed_ids;
         foreach my $entry (@processed_entries) {
@@ -331,7 +270,7 @@ do {
             }
             catch {
                 warn
-"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your Toggl dashboard.";
+"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
                 $no_errors = 0;
                 push( @failed_ids, int( $entry->{id} ) );
             };
@@ -342,7 +281,7 @@ do {
 
         print "Done.\n";
         if ( scalar(@entry_ids) > 0 ) {
-            $tggl->bulk_update_time_entries_tags(
+            $toggl->bulk_update_time_entries_tags(
                 {
                     time_entry_ids => \@entry_ids,
                     tags           => ["logged"],
@@ -351,7 +290,7 @@ do {
             );
         }
         if ( scalar(@failed_ids) > 0 ) {
-            $tggl->bulk_update_time_entries_tags(
+            $toggl->bulk_update_time_entries_tags(
                 {
                     time_entry_ids => \@failed_ids,
                     tags           => ["errored"],
@@ -359,6 +298,101 @@ do {
                 }
             );
         }
+
+
+}
+
+#Main
+
+#Get environment variables
+
+my $jira_url      = $ENV{'JIRA_URL'};
+my $jira_email    = $ENV{'JIRA_EMAIL'};
+my $jira_user     = $ENV{'JIRA_USER'};
+my $jira_password = $ENV{'JIRA_PASSWORD'};
+
+my $toggl_api_token = $ENV{'TOGGL_API_KEY'};
+
+# Process args
+my $argssize;
+my @args;
+
+my @dates;    #start_date - stop_data
+
+$argssize = scalar @ARGV;
+
+if ( $argssize != 3 and $argssize != 4 ) {
+    print STDERR
+"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility role.\nBy default, visibility is set to 'public'.\n";
+    exit -1;
+}
+
+# Provided dates must be valid
+for my $arg ( @ARGV[ 0 .. 1 ] ) {
+    my ( $y, $m, $d ) = $arg =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
+      or die "$arg is not a valid data.";
+
+    push(
+        @dates,
+        DateTime->new(
+            year      => $y,
+            month     => $m,
+            day       => $d,
+            time_zone => 'local',
+        )
+    );
+}
+
+my $first_date = $dates[0];
+my $last_date  = $dates[1];
+
+if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
+    die "Start date cannot be greater than end date.";
+}
+
+my $rounded_time = $ARGV[2];
+
+# Set default visibility, if there is a fourth arg, it will be visibility default value
+
+my $visibility = "public";
+$visibility = $ARGV[3] if ( $argssize == 4 );
+
+# All args parsed, count how many days have to be processed
+
+my $number_of_days = $last_date->delta_days($first_date)->days();
+
+# Create toggl instance
+my $toggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
+
+my $current_date = $first_date;
+
+# Process entries day by day
+
+do {
+
+    print "Processing entries from ", $current_date->strftime('%Y-%m-%d'), "\n";
+
+    my $next_date = $current_date->clone()->add( days => 1 );
+
+    my @entries = @{
+        $toggl->get_time_entries(
+            {
+                start => $current_date,
+                stop  => $next_date,
+            }
+        )
+    };
+
+    @entries =
+      sort { $a->{id} <=> $b->{id} } @entries;
+
+    my @processed_entries = process_time_entries(\@entries, $visibility, $toggl, $rounded_time);
+
+    if ( scalar @processed_entries ) {
+
+        print "Sending Worklogs...";
+
+        log_entries(\@processed_entries, $toggl, $jira_url, $jira_email, $jira_user, $jira_password);
 
         print "Entries logged."
 

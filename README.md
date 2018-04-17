@@ -82,3 +82,39 @@ Processing entries from 2018-04-04
 There was no entries for that date.
 All Done
 ```
+
+**Errored entries**
+
+Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
+
+```
+perl worklogger.pl 2018-04-17 2018-04-17 15 developers
+Processing entries from 2018-04-17
+Issue IT-762 Test Issue
+	Started at 2018-04-17T04:37:40+00:00
+	Ended at 2018-04-17T04:48:40+00:00
+	With the following duration: 11 minutes.
+	What did you do? -> Rewrite module.
+
+	Set visibility (default is developers): developersssss
+
+Detected and error in ONSYS-765: An error ocurred: API call returned 400: Bad Request at worklogger.pl line 276.
+
+	This error has been registered in your toggl dashboard. at worklogger.pl line 272, <STDIN> line 8.
+Sending Worklogs...Done.
+Entries logged.All Done
+
+perl worklogger.pl 2018-04-17 2018-04-17 15 developers
+Processing entries from 2018-04-17
+Issue IT-762 Test Issue
+	** ERRORED: This issue was already tried to be registered but it failed. **
+	Started at 2018-04-17T04:37:40+00:00
+	Ended at 2018-04-17T04:48:40+00:00
+	With the following duration: 11 minutes.
+	What did you do? -> Rewrite module.
+
+	Set visibility (default is developers):
+
+Sending Worklogs...Done.
+Entries logged.All Done
+```
