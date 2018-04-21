@@ -3,7 +3,7 @@ Utility to log work into Jira issues using Toggl recorded time entries.
 
 ## Why I wrote this utility?
 
-Every day at IT department I have to handle many issues. For each issue, head of department asks us to log your work in Company's JIRA account.
+Every day at IT department I have to handle many issues. For each issue, head of department asks us to log our work in Company's JIRA account.
 
 We have to set the following info:
 * Date started
