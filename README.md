@@ -22,7 +22,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 
 ## Install
 
-As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available wich includes all dependecies:
+As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available which includes all dependencies:
 ```bash
 $ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
 # echo "deb http://packages.windmaker.net/ any windmaker" > /etc/apt/sources.list.d/windmaker.list
