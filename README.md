@@ -20,9 +20,19 @@ But...I wanted to go depper, I wanted to parse time entries and work my work wit
 
 I wrote a [Wrapper able to manage Toggl time entries using its API](https://github.com/a-castellano/Toggl-Wrapper) and this utility.
 
+## Install
+
+As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available wich includes all dependecies:
+```bash
+$ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
+# echo "deb http://packages.windmaker.net/ any windmaker" > /etc/apt/sources.list.d/windmaker.list
+$ sudo apt-get update
+$ sudo apt-get install toggl-jira-work-logger
+```
+
 ## Usage
 
-**worklogger.pl** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
+**toggl-jira-work-logger** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
 
 * **JIRA_URL** - Your Organization JIRA url.
 * **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA accunt. 
@@ -30,7 +40,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
 
-**worklogger.pl** needs three arguments to work
+**toggl-jira-work-logger** needs three arguments to work
 * Start Date.
 * End Date.
 * Rounded time (for each issue, total time of entries will be rounded to that time).
@@ -39,7 +49,7 @@ Optionaly your are able to set a default visibility group for your logs, by defa
 
 Let's see some examples:
 ```bash
-perl worklogger.pl 2018-04-05 2018-04-05 15
+toggl-jira-work-logger 2018-04-05 2018-04-05 15
 Processing entries from 2018-04-05
 Issue IT-761 Found error on in my app
 	Started at 2018-04-05T16:22:48+00:00
@@ -71,11 +81,11 @@ Entries logged.All Done
 
 You are also able to set another default visibility team:
 ```bash
-perl worklogger.pl 2018-04-05 2018-04-05 15 developers
+toggl-jira-work-logger 2018-04-05 2018-04-05 15 developers
 ```
 Finally, each logged time entry is marked as "logged" in your toggl dashboard and it won't be logged again:
 ```bash
-perl worklogger.pl 2018-04-03 2018-04-04 15
+toggl-jira-work-logger 2018-04-03 2018-04-04 15
 Processing entries from 2018-04-03
 There was no entries for that date.
 Processing entries from 2018-04-04
@@ -88,7 +98,7 @@ All Done
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
 ```
-perl worklogger.pl 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	Started at 2018-04-17T04:37:40+00:00
@@ -104,7 +114,7 @@ Detected and error in ONSYS-765: An error ocurred: API call returned 400: Bad Re
 Sending Worklogs...Done.
 Entries logged.All Done
 
-perl worklogger.pl 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	** ERRORED: This issue was already tried to be registered but it failed. **
