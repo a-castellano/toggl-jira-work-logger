@@ -25,7 +25,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://gith
 As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available which includes all dependencies:
 ```bash
 $ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
-# echo "deb http://packages.windmaker.net/ any windmaker" > /etc/apt/sources.list.d/windmaker.list
+# echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) testing" > /etc/apt/sources.list.d/windmaker.list
 $ sudo apt-get update
 $ sudo apt-get install toggl-jira-work-logger
 ```
