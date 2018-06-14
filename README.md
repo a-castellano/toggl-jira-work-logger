@@ -12,7 +12,7 @@ We have to set the following info:
 
 Also, sometimes, servers come down or a client or our Account Manager scales other issue which has more priority. I have to stop what I'm doing to handle that issue. IT support... you know.
 
-After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I have try to make that process as fast as possible.
+After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible.
 
 There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composeb by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
 
@@ -45,7 +45,7 @@ $ sudo apt-get install toggl-jira-work-logger
 * End Date.
 * Rounded time (for each issue, total time of entries will be rounded to that time).
 
-Optionaly your are able to set a default visibility group for your logs, by default this field is empyty so visibility value is *public*. The visibility groups has to have the same name that they have in your JIRA board.
+Optionaly your are able to set a default visibility group or role for your logs, by default these fields are empyty so visibility value is *public*. The visibility groups and roles has to have the same name that they have in your JIRA board.
 
 Let's see some examples:
 ```bash
@@ -57,7 +57,10 @@ Issue IT-761 Found error on in my app
 	With the following duration: 7 minutes.
 	What did you do? -> Fix some issues
 
-	Set visibility (default is public):
+	Set visibility (default is  public)
+	Role or group (leave empty if you do not want to change it):
+
+	Role or group (leave empty if you do not want to change it):
 
 Issue IT-762 Test issue
 	Started at 2018-04-05T16:30:15+00:00
@@ -65,15 +68,22 @@ Issue IT-762 Test issue
 	With the following duration: 8 minutes.
 	What did you do? -> Customer issues
 
-	Set visibility (default is public):it-team
+	Set visibility (default is  public)
+	Role or group (leave empty if you do not want to change it): role
+
+	Role or group (leave empty if you do not want to change it): it-team
 
 Issue IT-762 Test issue
 	Started at 2018-04-05T16:38:57+00:00
 	Ended at 2018-04-05T17:45:03+00:00
 	With the following duration: 66 minutes.
 	What did you do? -> OH, there was another bug.
+	
+	Set visibility (default is  public)
+	Role or group (leave empty if you do not want to change it): group
 
-	Set visibility (default is public):developers
+	Role or group (leave empty if you do not want to change it): developers
+
 
 Sending Worklogs...Done.
 Entries logged.All Done
@@ -81,7 +91,7 @@ Entries logged.All Done
 
 You are also able to set another default visibility team:
 ```bash
-toggl-jira-work-logger 2018-04-05 2018-04-05 15 developers
+toggl-jira-work-logger 2018-04-05 2018-04-05 15 role developers
 ```
 Finally, each logged time entry is marked as "logged" in your toggl dashboard and it won't be logged again:
 ```bash
@@ -98,7 +108,7 @@ All Done
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
 ```
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	Started at 2018-04-17T04:37:40+00:00
@@ -106,15 +116,17 @@ Issue IT-762 Test Issue
 	With the following duration: 11 minutes.
 	What did you do? -> Rewrite module.
 
-	Set visibility (default is developers): developersssss
+        Set visibility (default is role developers)
+	Role or group (leave empty if you do not want to change it): role
+	Role or group name (leave empty if you do not want to change it): developersssss
 
-Detected and error in ONSYS-765: An error ocurred: API call returned 400: Bad Request at worklogger.pl line 276.
+Detected and error in IT-762: An error ocurred: API call returned 400: Bad Request at worklogger.pl line 276.
 
 	This error has been registered in your toggl dashboard. at worklogger.pl line 272, <STDIN> line 8.
 Sending Worklogs...Done.
 Entries logged.All Done
 
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	** ERRORED: This issue was already tried to be registered but it failed. **
@@ -123,7 +135,10 @@ Issue IT-762 Test Issue
 	With the following duration: 11 minutes.
 	What did you do? -> Rewrite module.
 
-	Set visibility (default is developers):
+	Set visibility (default is role developers)
+	Role or group (leave empty if you do not want to change it): 
+	
+	Role or group name (leave empty if you do not want to change it):
 
 Sending Worklogs...Done.
 Entries logged.All Done
