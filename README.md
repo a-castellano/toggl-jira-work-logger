@@ -135,7 +135,10 @@ Issue IT-762 Test Issue
 	With the following duration: 11 minutes.
 	What did you do? -> Rewrite module.
 
-	Set visibility (default is developers):
+	Set visibility (default is role developers)
+	Role or group (leave empty if you do not want to change it): 
+	
+	Role or group name (leave empty if you do not want to change it):
 
 Sending Worklogs...Done.
 Entries logged.All Done
