@@ -17,6 +17,7 @@ use DateTime::Format::Strptime qw(  );
 use Date::Calc qw/Delta_Days/;
 use Carp qw(croak);
 use Try::Tiny;
+use Scalar::Util qw(looks_like_number);
 
 use Toggl::Wrapper;
 use Data::Dumper;
@@ -69,11 +70,9 @@ sub make_api_call {
 }
 
 sub work_log {
-    my (
-        $url,        $email,      $user,
-        $password,   $issue_code, $started,
-        $time_spent, $comment,    $issue_visibility
-    ) = @_;
+    my ( $url, $email, $user, $password, $issue_code, $started,
+        $time_spent, $comment, $issue_visibility_type, $issue_visibility )
+      = @_;
 
     my %author;
     $author{self} =
@@ -89,7 +88,7 @@ sub work_log {
     );
 
     if ( $issue_visibility ne "" ) {
-        $visibility{type}  = "group";
+        $visibility{type}  = "$issue_visibility_type";
         $visibility{value} = "$issue_visibility";
         $data{visibility}  = \%visibility;
     }
@@ -116,14 +115,15 @@ sub work_log {
 
 }
 
-sub process_time_entries{
+sub process_time_entries {
 
-my $entries = shift;
-my $visibility = shift;
-my $toggl = shift;
-my $rounded_time = shift;
+    my $entries         = shift;
+    my $visibility_type = shift;
+    my $visibility      = shift;
+    my $toggl           = shift;
+    my $rounded_time    = shift;
 
-   my @entries = @{ $entries };
+    my @entries = @{$entries};
 
     my %total_work_by_issue;
     my @processed_entries;
@@ -172,13 +172,36 @@ my $rounded_time = shift;
                     }
                 } while ( $description =~ /^\s*$/ );
 
-                print "\tSet visibility (default is $visibility):";
+                print
+"\tSet visibility (default is $visibility_type $visibility)\n";
+                my $issue_visibility_type = "";
+                do {
+                    print
+"\tRole or group (leave empty if you do not want to change it):";
+                    $issue_visibility_type = <STDIN>;
+                    chomp $issue_visibility_type;
+                    print "\n";
+                  } while ( $issue_visibility_type ne ""
+                    && $issue_visibility_type ne "group"
+                    && $issue_visibility_type ne "role" );
+                print
+"\tRole or group name (leave empty if you do not want to change it):";
                 my $issue_visibility = <STDIN>;
+                chomp $issue_visibility_type;
                 chomp $issue_visibility;
+                if ( $issue_visibility_type =~ /^\s*$/ ) {
+                    $issue_visibility_type = $visibility_type;
+                }
+                if ( $issue_visibility_type eq "" ) {
+                    $issue_visibility_type = "";
+                }
+
                 if ( $issue_visibility =~ /^\s*$/ ) {
                     $issue_visibility = $visibility;
                 }
-                if ( $issue_visibility eq "public" ) {
+                if (    $issue_visibility eq "public"
+                    and $issue_visibility_type eq "" )
+                {
                     $issue_visibility = "";
                 }
 
@@ -192,12 +215,13 @@ my $rounded_time = shift;
                         issue_id => $issue_id,
                         started  => $entry->{start} =~
                           s/\+(\d\d):(\d\d$)/\.0\+$1$2/gr,
-                        duration         => $duration,
-                        description      => $description,
-                        time_entry       => $entry,
-                        id               => $entry->{id},
-                        tags             => \@{ $entry->{tags} },
-                        issue_visibility => $issue_visibility
+                        duration              => $duration,
+                        description           => $description,
+                        time_entry            => $entry,
+                        id                    => $entry->{id},
+                        tags                  => \@{ $entry->{tags} },
+                        issue_visibility_type => $issue_visibility_type,
+                        issue_visibility      => $issue_visibility
                     }
                 );
                 print "\n";
@@ -241,64 +265,61 @@ my $rounded_time = shift;
 
 }
 
+sub log_entries {
 
-sub log_entries{
+    my $processed_entries = shift;
+    my $toggl             = shift;
+    my $jira_url          = shift;
+    my $jira_email        = shift;
+    my $jira_user         = shift;
+    my $jira_password     = shift;
 
-my $processed_entries = shift;
-my $toggl = shift;
-my $jira_url = shift;
-my $jira_email = shift;
-my $jira_user = shift;
-my $jira_password = shift;
+    my @processed_entries = @{$processed_entries};
 
-   my @processed_entries = @{ $processed_entries };
-
-
-        my @entry_ids;
-        my @failed_ids;
-        foreach my $entry (@processed_entries) {
-            my $no_errors = 0;
-            try {
-                work_log(
-                    $jira_url,          $jira_email,
-                    $jira_user,         $jira_password,
-                    $entry->{issue_id}, $entry->{started},
-                    $entry->{duration}, $entry->{description},
-                    $entry->{issue_visibility}
-                );
-                $no_errors = 1;
-            }
-            catch {
-                warn
+    my @entry_ids;
+    my @failed_ids;
+    foreach my $entry (@processed_entries) {
+        my $no_errors = 0;
+        try {
+            work_log(
+                $jira_url,                       $jira_email,
+                $jira_user,                      $jira_password,
+                $entry->{issue_id},              $entry->{started},
+                $entry->{duration},              $entry->{description},
+                $entry->{issue_visibility_type}, $entry->{issue_visibility}
+            );
+            $no_errors = 1;
+        }
+        catch {
+            warn
 "Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
-                $no_errors = 0;
-                push( @failed_ids, int( $entry->{id} ) );
-            };
-            if ($no_errors) {
-                push( @entry_ids, int( $entry->{id} ) );
+            $no_errors = 0;
+            push( @failed_ids, int( $entry->{id} ) );
+        };
+        if ($no_errors) {
+            push( @entry_ids, int( $entry->{id} ) );
+        }
+    }
+
+    print "Done.\n";
+    if ( scalar(@entry_ids) > 0 ) {
+        $toggl->bulk_update_time_entries_tags(
+            {
+                time_entry_ids => \@entry_ids,
+                tags           => ["logged"],
+                tag_action     => "add",
             }
-        }
-
-        print "Done.\n";
-        if ( scalar(@entry_ids) > 0 ) {
-            $toggl->bulk_update_time_entries_tags(
-                {
-                    time_entry_ids => \@entry_ids,
-                    tags           => ["logged"],
-                    tag_action     => "add",
-                }
-            );
-        }
-        if ( scalar(@failed_ids) > 0 ) {
-            $toggl->bulk_update_time_entries_tags(
-                {
-                    time_entry_ids => \@failed_ids,
-                    tags           => ["errored"],
-                    tag_action     => "add",
-                }
-            );
-        }
-
+        );
+    }
+    if ( scalar(@failed_ids) > 0 ) {
+        $toggl->bulk_update_time_entries_tags(
+            {
+                time_entry_ids => \@failed_ids,
+                tags           => ["errored"],
+                tag_action     => "add",
+            }
+        );
+    }
 
 }
 
@@ -321,9 +342,9 @@ my @dates;    #start_date - stop_data
 
 $argssize = scalar @ARGV;
 
-if ( $argssize != 3 and $argssize != 4 ) {
+if ( $argssize != 3 and $argssize != 5 ) {
     print STDERR
-"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility role.\nBy default, visibility is set to 'public'.\n";
+"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility group or role.\nBy default, visibility is set to 'public'.\n";
     exit -1;
 }
 
@@ -352,10 +373,23 @@ if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
 
 my $rounded_time = $ARGV[2];
 
+if ( !( looks_like_number($rounded_time) ) ) {
+    die "Rounded time must be a number.";
+}
+
 # Set default visibility, if there is a fourth arg, it will be visibility default value
 
-my $visibility = "public";
-$visibility = $ARGV[3] if ( $argssize == 4 );
+if ( $argssize == 5 ) {
+    if ( ( $ARGV[3] ne "role" ) && ( $ARGV[3] ne "group" ) ) {
+        die "Fourth arg must be \"group\" or \"role\".";
+    }
+}
+
+my $visibility_type = "";
+my $visibility      = "public";
+
+$visibility_type = $ARGV[3] if ( $argssize == 5 );
+$visibility      = $ARGV[4] if ( $argssize == 5 );
 
 # All args parsed, count how many days have to be processed
 
@@ -386,13 +420,16 @@ do {
     @entries =
       sort { $a->{id} <=> $b->{id} } @entries;
 
-    my @processed_entries = process_time_entries(\@entries, $visibility, $toggl, $rounded_time);
+    my @processed_entries =
+      process_time_entries( \@entries, $visibility_type, $visibility, $toggl,
+        $rounded_time );
 
     if ( scalar @processed_entries ) {
 
         print "Sending Worklogs...";
 
-        log_entries(\@processed_entries, $toggl, $jira_url, $jira_email, $jira_user, $jira_password);
+        log_entries( \@processed_entries, $toggl, $jira_url, $jira_email,
+            $jira_user, $jira_password );
 
         print "Entries logged."
 
