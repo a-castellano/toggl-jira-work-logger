@@ -91,7 +91,7 @@ Entries logged.All Done
 
 You are also able to set another default visibility team:
 ```bash
-toggl-jira-work-logger 2018-04-05 2018-04-05 15 developers
+toggl-jira-work-logger 2018-04-05 2018-04-05 15 role developers
 ```
 Finally, each logged time entry is marked as "logged" in your toggl dashboard and it won't be logged again:
 ```bash
@@ -108,7 +108,7 @@ All Done
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
 ```
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	Started at 2018-04-17T04:37:40+00:00
@@ -116,15 +116,17 @@ Issue IT-762 Test Issue
 	With the following duration: 11 minutes.
 	What did you do? -> Rewrite module.
 
-	Set visibility (default is developers): developersssss
+        Set visibility (default is role developers)
+	Role or group (leave empty if you do not want to change it): role
+	Role or group name (leave empty if you do not want to change it): developersssss
 
-Detected and error in ONSYS-765: An error ocurred: API call returned 400: Bad Request at worklogger.pl line 276.
+Detected and error in IT-762: An error ocurred: API call returned 400: Bad Request at worklogger.pl line 276.
 
 	This error has been registered in your toggl dashboard. at worklogger.pl line 272, <STDIN> line 8.
 Sending Worklogs...Done.
 Entries logged.All Done
 
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 developers
+toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	** ERRORED: This issue was already tried to be registered but it failed. **
