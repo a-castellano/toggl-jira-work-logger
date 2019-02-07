@@ -20,14 +20,14 @@ There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) 
 
 But...I wanted to go depper, I wanted to parse time entries and work my work without going to each issue JIRA page, this process was too long and boring.
 
-I wrote a [Wrapper able to manage Toggl time entries using its API](/a-castellano/Toggl-Wrapper) and this utility.
+I wrote a [Wrapper able to manage Toggl time entries using its API](https://git.windmaker.net/a-castellano/Toggl-Wrapper) and this utility.
 
 ## Install
 
 As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available which includes all dependencies:
 ```bash
 $ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
-# echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) testing" > /etc/apt/sources.list.d/windmaker.list
+# echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/windmaker.list
 $ sudo apt-get update
 $ sudo apt-get install toggl-jira-work-logger
 ```
@@ -37,7 +37,7 @@ $ sudo apt-get install toggl-jira-work-logger
 **toggl-jira-work-logger** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
 
 * **JIRA_URL** - Your Organization JIRA url.
-* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA accunt. 
+* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account. 
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
