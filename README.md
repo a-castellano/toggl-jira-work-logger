@@ -1,6 +1,8 @@
 # toggl-jira-work-logger
 Utility to log work into Jira issues using Toggl recorded time entries.
 
+[Actual Repo](https://git.windmaker.net/a-castellano/toggl-jira-work-logger)
+
 ## Why I wrote this utility?
 
 Every day at IT department I have to handle many issues. For each issue, head of department asks us to log our work in Company's JIRA account.
@@ -18,7 +20,7 @@ There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) 
 
 But...I wanted to go depper, I wanted to parse time entries and work my work without going to each issue JIRA page, this process was too long and boring.
 
-I wrote a [Wrapper able to manage Toggl time entries using its API](https://github.com/a-castellano/Toggl-Wrapper) and this utility.
+I wrote a [Wrapper able to manage Toggl time entries using its API](/a-castellano/Toggl-Wrapper) and this utility.
 
 ## Install
 
