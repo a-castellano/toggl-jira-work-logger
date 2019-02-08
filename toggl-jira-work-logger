@@ -26,7 +26,7 @@ use Data::Dumper;
 use constant USER_AGENT       => "toggl-jira-work-logger";
 use constant JIRA_API_SUB_URL => "/rest/api/2";
 
-$SIG{INT} = sub { say "Aborted."; exit 0};
+$SIG{INT} = sub { say "Aborted."; exit 0 };
 
 sub make_api_call {
     my $call      = shift;
@@ -434,7 +434,7 @@ do {
         log_entries( \@processed_entries, $toggl, $jira_url, $jira_email,
             $jira_user, $jira_password );
 
-        print "Entries logged."
+        print "Entries logged.";
 
     }
     else {
