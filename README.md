@@ -1,6 +1,8 @@
 # toggl-jira-work-logger
 Utility to log work into Jira issues using Toggl recorded time entries.
 
+[Actual Repo](https://git.windmaker.net/a-castellano/toggl-jira-work-logger)
+
 ## Why I wrote this utility?
 
 Every day at IT department I have to handle many issues. For each issue, head of department asks us to log our work in Company's JIRA account.
@@ -14,31 +16,62 @@ Also, sometimes, servers come down or a client or our Account Manager scales oth
 
 After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible.
 
-There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composeb by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
+There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composed by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
 
 But...I wanted to go depper, I wanted to parse time entries and work my work without going to each issue JIRA page, this process was too long and boring.
 
-I wrote a [Wrapper able to manage Toggl time entries using its API](https://github.com/a-castellano/Toggl-Wrapper) and this utility.
+I wrote a [Wrapper able to manage Toggl time entries using its API](https://git.windmaker.net/a-castellano/Toggl-Wrapper) and this utility.
 
-## Install
+## Ways to use this app
 
-As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available which includes all dependencies:
+There are two ways to run this app, using the CLI command or using [this project Docker image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger). 
+
+Usage is almost the same for these ways, differences will be explained below.
+
+## Installation
+
+### Install from repository 
+
+As I said before this script uses another Perl library from my own. If you are using Ubuntu Xenial or Bionic there is a package available which includes all dependencies:
 ```bash
-$ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
-# echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) testing" > /etc/apt/sources.list.d/windmaker.list
-$ sudo apt-get update
-$ sudo apt-get install toggl-jira-work-logger
+wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
+sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main
+sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ any main"
+sudo apt-get update
+sudo apt-get install toggl-jira-work-logger
 ```
+
+### Install from source
+
+After installing [Toggl Wrapper Library](https://git.windmaker.net/a-castellano/Toggl-Wrapper), calling toggl-jira-work-logger should work.
+
+### Docker
+
+There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-work-logger), usage will be explained later.
 
 ## Usage
 
 **toggl-jira-work-logger** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
 
 * **JIRA_URL** - Your Organization JIRA url.
-* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA accunt. 
+* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account. 
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
+
+**Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
+
+For example, place the following content at **$HOME/.toggl-jira**
+```
+TZ=Europe/Madrid
+JIRA_URL=https://company.atlassian.net
+JIRA_EMAIL=alvaro.castellano.vela@gmail.com
+JIRA_USER=a-castellano
+JIRA_PASSWORD=Y0UR_J1Ra_Pa55W0RD
+TOGGL_API_KEY=yourtogglapitoken
+```
+
+Include a line containing `source $HOME/.toggl-jira` in your bashrc if you are using the CLI.
 
 **toggl-jira-work-logger** needs three arguments to work
 * Start Date.
@@ -107,7 +140,7 @@ All Done
 
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
-```
+```bash
 toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
@@ -143,3 +176,11 @@ Issue IT-762 Test Issue
 Sending Worklogs...Done.
 Entries logged.All Done
 ```
+
+### Docker usage
+
+Call this utility with `docker run`, behaviour will be the same as above.
+```bash
+docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-logger toggl-jira-work-logger 2019-02-02 2019-02-02 15 role Developers
+```
+
