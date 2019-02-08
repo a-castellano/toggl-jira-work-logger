@@ -1,0 +1,9 @@
+image: acastellano/debbuilder
+
+stages:
+    - build
+
+dev_package:
+    stage: build
+    script:
+        - dpkg-buildpackage -uc -b
