@@ -28,15 +28,26 @@ There are two ways to run this app, using the CLI command or using [this project
 
 Usage is almost the same for these ways, differences will be explained below.
 
-## Install 
+## Installation
+
+### Install from repository 
 
 As I said before this script uses another Perl library from my own. If you are using Ubuntu Xenial or Bionic there is a package available which includes all dependencies:
 ```bash
-$ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
-# echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/windmaker.list
-$ sudo apt-get update
-$ sudo apt-get install toggl-jira-work-logger
+wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
+sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main
+sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ any main"
+sudo apt-get update
+sudo apt-get install toggl-jira-work-logger
 ```
+
+### Install from source
+
+After installing [Toggl Wrapper Library](https://git.windmaker.net/a-castellano/Toggl-Wrapper), calling toggl-jira-work-logger should work.
+
+### Docker
+
+There is also a [Docker Image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger), usage will be explained later.
 
 ## Usage
 
@@ -47,6 +58,8 @@ $ sudo apt-get install toggl-jira-work-logger
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
+
+**Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
 
 **toggl-jira-work-logger** needs three arguments to work
 * Start Date.
