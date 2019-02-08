@@ -1,3 +1,9 @@
+toggl-jira-work-logger (0.3-1) unstable; urgency=low
+
+  * Improve time entries regex
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Fri, 08 Jan 2019 22:54:27 +0200
+
 toggl-jira-work-logger (0.2-1) unstable; urgency=low
 
   * Manage roles and groups.
