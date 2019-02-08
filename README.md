@@ -61,6 +61,18 @@ There is also a [Docker Image](https://cloud.docker.com/u/acastellano/repository
 
 **Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
 
+For example, place the following content at **$HOME/.toggl-jira**
+```
+TZ=Europe/Madrid
+JIRA_URL=https://company.atlassian.net
+JIRA_EMAIL=alvaro.castellano.vela@gmail.com
+JIRA_USER=a-castellano
+JIRA_PASSWORD=Y0UR_J1Ra_Pa55W0RD
+TOGGL_API_KEY=yourtogglapitoken
+```
+
+Include a line containing `source $HOME/.toggl-jira` in your bashrc if you are using the CLI.
+
 **toggl-jira-work-logger** needs three arguments to work
 * Start Date.
 * End Date.
@@ -128,7 +140,7 @@ All Done
 
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
-```
+```bash
 toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
@@ -164,3 +176,11 @@ Issue IT-762 Test Issue
 Sending Worklogs...Done.
 Entries logged.All Done
 ```
+
+### Docker usage
+
+Call this utility with `docker run`, behaivour will be the same as above.
+```bash
+docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-logger toggl-jira-work-logger 2019-02-02 2019-02-02 15 role Developers
+```
+
