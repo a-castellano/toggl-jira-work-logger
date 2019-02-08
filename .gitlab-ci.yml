@@ -6,5 +6,4 @@ stages:
 dev_package:
     stage: build
     script:
-        - ls -lah
         - dpkg-buildpackage -uc -b
