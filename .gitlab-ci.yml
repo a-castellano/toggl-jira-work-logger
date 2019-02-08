@@ -6,4 +6,5 @@ stages:
 dev_package:
     stage: build
     script:
+        - mkdir -p builds/a-castellano/toggl-jira-work-logger/debian/toggl-jira-work-logger/usr/bin
         - dpkg-buildpackage -uc -b
