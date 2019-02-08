@@ -16,15 +16,21 @@ Also, sometimes, servers come down or a client or our Account Manager scales oth
 
 After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible.
 
-There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composeb by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
+There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composed by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
 
 But...I wanted to go depper, I wanted to parse time entries and work my work without going to each issue JIRA page, this process was too long and boring.
 
 I wrote a [Wrapper able to manage Toggl time entries using its API](https://git.windmaker.net/a-castellano/Toggl-Wrapper) and this utility.
 
-## Install
+## Ways to use this app
 
-As I said before this script uses another Perl library from my own. If you are using Debian/Ubuntu there is a package available which includes all dependencies:
+There are two ways to run this app, using the CLI command or using [this project Docker image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger). 
+
+Usage is almost the same for these ways, differences will be explained below.
+
+## Install 
+
+As I said before this script uses another Perl library from my own. If you are using Ubuntu Xenial or Bionic there is a package available which includes all dependencies:
 ```bash
 $ wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
 # echo "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main" > /etc/apt/sources.list.d/windmaker.list
