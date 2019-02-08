@@ -47,7 +47,7 @@ After installing [Toggl Wrapper Library](https://git.windmaker.net/a-castellano/
 
 ### Docker
 
-There is also a [Docker Image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger), usage will be explained later.
+There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-work-logger), usage will be explained later.
 
 ## Usage
 
@@ -179,7 +179,7 @@ Entries logged.All Done
 
 ### Docker usage
 
-Call this utility with `docker run`, behaivour will be the same as above.
+Call this utility with `docker run`, behaviour will be the same as above.
 ```bash
 docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-logger toggl-jira-work-logger 2019-02-02 2019-02-02 15 role Developers
 ```
