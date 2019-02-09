@@ -9,6 +9,8 @@ dev_package:
         - dpkg-buildpackage -uc -b
         - mkdir build
         - mv ../*.deb build/
+        - PACKAGE=$(ls build)
+        - echo $PACKAGE
     artifacts:
         paths:
             - build/*
