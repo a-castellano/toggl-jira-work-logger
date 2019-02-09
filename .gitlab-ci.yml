@@ -23,4 +23,4 @@ dev_package:
 dev_docker_build:
     stage: docker_build
     script:
-        - echo "Hi all"
+        - docker ps
