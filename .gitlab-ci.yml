@@ -14,6 +14,7 @@ dev_package:
         - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger
         - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/file/toggl-jira-work-logger
         - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-testing'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/snapshots"
+        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/snapshots"
     artifacts:
         paths:
             - build/*
