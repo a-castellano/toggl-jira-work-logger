@@ -1,11 +1,10 @@
-image: acastellano/debbuilder
-
 stages:
     - build
     - docker_build
 
 dev_package:
     stage: build
+    image: acastellano/debbuilder
     script:
         - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
         - dpkg-buildpackage -uc -b
@@ -22,5 +21,6 @@ dev_package:
 
 dev_docker_build:
     stage: docker_build
+    image: docker:stable
     script:
         - docker ps
