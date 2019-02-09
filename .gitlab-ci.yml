@@ -7,7 +7,6 @@ stages:
 dev_package:
     stage: build
     script:
-        - exit -1
         - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
         - dpkg-buildpackage -uc -b
         - mkdir build
