@@ -2,10 +2,12 @@ image: acastellano/debbuilder
 
 stages:
     - build
+    - docker_build
 
 dev_package:
     stage: build
     script:
+        - exit -1
         - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
         - dpkg-buildpackage -uc -b
         - mkdir build
@@ -18,3 +20,8 @@ dev_package:
     artifacts:
         paths:
             - build/*
+
+dev_docker_build:
+    stage: docker_build
+    script:
+        - echo "Hi all"
