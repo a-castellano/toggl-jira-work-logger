@@ -27,7 +27,7 @@ dev_docker_build:
         - docker build -t toggl-jira-work-logger-develop -f Dockerfile-develop .
         - docker login --username acastellano --password $DOCKERHUBPASSWORD
         - docker create --name=toggl-jira-work-logger-develop -i toggl-jira-work-logger-develop
-        - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" debbuilder acastellano/toggl-jira-work-logger-develop
+        - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger-develop acastellano/toggl-jira-work-logger-develop
         - docker push acastellano/toggl-jira-work-logger-develop
         - docker stop toggl-jira-work-logger-develop
         - docker rm toggl-jira-work-logger-develop
