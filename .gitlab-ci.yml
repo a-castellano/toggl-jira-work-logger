@@ -23,4 +23,5 @@ dev_docker_build:
     stage: docker_build
     image: docker:stable
     script:
-        - docker build -t toggl-jira-work-logger-develop Dockerfile-develop
+        - docker build -t toggl-jira-work-logger-develop -f Dockerfile-develop
+        - docker rmi toggl-jira-work-logger-develop
