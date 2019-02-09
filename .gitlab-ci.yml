@@ -11,6 +11,7 @@ dev_package:
         - mv ../*.deb build/
         - PACKAGE=$(ls build)
         - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger
+        - curl -X POST http://packages.windmaker.net:8000/api/packages-windmaker-any-testing/file/toggl-jira-work-logger
     artifacts:
         paths:
             - build/*
