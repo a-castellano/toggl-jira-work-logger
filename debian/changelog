@@ -1,0 +1,23 @@
+toggl-jira-work-logger (0.3.1-1) unstable; urgency=low
+
+  * Handle SIGINT for allowing docker image stop when this signal is sent.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Fri, 10 Jan 2019 13:31:00 +0200
+
+toggl-jira-work-logger (0.3-1) unstable; urgency=low
+
+  * Improve time entries regex
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Fri, 08 Jan 2019 22:54:27 +0200
+
+toggl-jira-work-logger (0.2-1) unstable; urgency=low
+
+  * Manage roles and groups.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Thu, 14 Jun 2018 20:17:27 +0200
+
+toggl-jira-work-logger (0.1-1) unstable; urgency=medium
+
+  * Initial release (Closes: #nnnn)  <nnnn is the bug number of your ITP>
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Thu, 26 Apr 2018 17:47:51 +0200

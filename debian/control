@@ -1,0 +1,13 @@
+Source: toggl-jira-work-logger
+Section: perl
+Priority: optional
+Maintainer: Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>
+Build-Depends: debhelper (>= 9)
+Build-Depends-Indep: perl
+Standards-Version: 3.9.8
+Homepage: https://github.com/a-castellano/toggl-jira-work-logger
+
+Package: toggl-jira-work-logger
+Architecture: all
+Depends: libtoggl-wrapper-perl
+Description: Description: Utility to log work into Jira issues using Toggl recorded time entries. 
