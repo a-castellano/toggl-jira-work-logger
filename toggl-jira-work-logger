@@ -339,6 +339,7 @@ sub usage {
 sub get_variables {
 
     my $required_variables_not_provided = 0;
+    my $help=undef;
 
     my $variables = {
         'jira-url'              => $ENV{'JIRA_URL'},
@@ -366,9 +367,12 @@ sub get_variables {
         'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
         'start-date=s'            => \$variables->{'start-date'},
         'end-date=s'              => \$variables->{'end-date'},
-    ) or usage;
+        'help'              => \$help,
+    ) or ( say "Inavid options. Run $0 --help for usage." and exit 2 );
 
-    # Set defaults
+	if (defined($help)){
+		usage();
+	}
 
     # Check required variables
     for my $required_variable (
