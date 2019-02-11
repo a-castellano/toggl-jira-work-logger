@@ -357,6 +357,7 @@ Arguments:
 	--visibility-owner-name=group-or-role-name   When visibility-owner is set
 
 Required arguments are:
+
 	jira-url
 	jira-email
 	jira-user
@@ -364,9 +365,16 @@ Required arguments are:
 	toggl-api-token
 
 Rules:
+
 	visibility-owner can only be set with group or role value
 
 	rounded-time -> Forces a group of time entries under the same day and name sum a total time multiple of rounded-time value
+
+Environment variable names:
+
+	This script does not look for a variable called jira-url, it looks for uppercase with lowslash as separator names.
+
+	So, environment variable for jira-url would be JIRA_URL
 
 More info can be found at https://git.windmaker.net/a-castellano/toggl-jira-work-logger
 EOF

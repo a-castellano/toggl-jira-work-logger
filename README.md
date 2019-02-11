@@ -12,7 +12,7 @@ We have to set the following info:
 * Time spent
 * A comment describing what we did during that time.
 
-Also, sometimes, servers come down or a client or our Account Manager scales other issue which has more priority. I have to stop what I'm doing to handle that issue. IT support... you know.
+Sometimes, servers come down or a client or our Account Manager scales other issue which has more priority. I have to stop what I'm doing to handle that issue. IT support... you know.
 
 After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible.
 
@@ -30,7 +30,7 @@ Usage is almost the same for these ways, differences will be explained below.
 
 ## Installation
 
-### Install from repository 
+### Install from repository (Tested on Ubuntu Xenial and Bionic only)
 
 As I said before this script uses another Perl library from my own. If you are using Ubuntu Xenial or Bionic there is a package available which includes all dependencies:
 ```bash
