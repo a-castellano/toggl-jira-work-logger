@@ -7,5 +7,4 @@ RUN wget -O - http://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | apt-key add
 RUN echo "deb http://packages.windmaker.net/ any testing" > /etc/apt/sources.list.d/windmaker.list
 RUN echo "deb [ arch=amd64 ] http://packages.windmaker.net/ bionic main" >> /etc/apt/sources.list.d/windmaker.list
 RUN apt-get update -qq
-RUN apt-get upgrade -y -qq
 RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger
