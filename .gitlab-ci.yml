@@ -43,7 +43,7 @@ dev_docker_build:
     image: docker:stable
     script:
         - VERSION=$(cat VERSION)
-        - docker build -t toggl-jira-work-logger-develop -f Dockerfile-develop .
+        - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
         - docker login --username acastellano --password $DOCKERHUBPASSWORD
         - docker create --name=toggl-jira-work-logger-develop -i toggl-jira-work-logger-develop
         - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger-develop acastellano/toggl-jira-work-logger-develop
@@ -59,7 +59,7 @@ release_docker_build:
     image: docker:stable
     script:
         - VERSION=$(cat VERSION)
-        - docker build -t toggl-jira-work-logger -f Dockerfile .
+        - docker build --no-cache -t toggl-jira-work-logger -f Dockerfile .
         - docker login --username acastellano --password $DOCKERHUBPASSWORD
         - docker create --name=toggl-jira-work-logger -i toggl-jira-work-logger
         - docker commit -m "Release image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger acastellano/toggl-jira-work-logger

@@ -19,9 +19,9 @@ use Date::Calc qw/Delta_Days/;
 use Carp qw(croak);
 use Try::Tiny;
 use Scalar::Util qw(looks_like_number);
+use Getopt::Long qw(GetOptions);
 
 use Toggl::Wrapper;
-use Data::Dumper;
 
 use constant USER_AGENT       => "toggl-jira-work-logger";
 use constant JIRA_API_SUB_URL => "/rest/api/2";
@@ -238,12 +238,15 @@ sub process_time_entries {
         my $extra_time = 0;
 
         # Total time in entry group must be rounded.
-        if ( $total_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
-            $extra_time =
-              (
-                int( $total_work_by_issue{$key}{total_time} / $rounded_time ) +
-                  1 ) * 15 -
-              $total_work_by_issue{$key}{total_time};
+        if ( $rounded_time > 0 ) {
+            if ( $total_work_by_issue{$key}{total_time} % $rounded_time != 0 ) {
+                $extra_time = (
+                    int(
+                        $total_work_by_issue{$key}{total_time} / $rounded_time
+                    ) + 1
+                  ) * $rounded_time -
+                  $total_work_by_issue{$key}{total_time};
+            }
         }
         foreach my $entry (@processed_entries) {
 
@@ -326,35 +329,150 @@ sub log_entries {
 
 }
 
-#Main
+sub usage {
 
-#Get environment variables
+    my $usage = <<'EOF';
 
-my $jira_url      = $ENV{'JIRA_URL'};
-my $jira_email    = $ENV{'JIRA_EMAIL'};
-my $jira_user     = $ENV{'JIRA_USER'};
-my $jira_password = $ENV{'JIRA_PASSWORD'};
+toggl-jira-work-logger
 
-my $toggl_api_token = $ENV{'TOGGL_API_KEY'};
+Utility to log work into Jira issues using Toggl recorded time entries.
 
-# Process args
-my $argssize;
-my @args;
+Usage:
 
-my @dates;    #start_date - stop_data
+    toggl-jira-work-logger --start-date=DATE --end-date=DATE [ARGUMENTS]
 
-$argssize = scalar @ARGV;
+For avoiding user to wirte thier secret credentials in the command line
+this script will look for config variables in shell environment. All variables
+except start-date and end-data can be set as environment variables.
 
-if ( $argssize != 3 and $argssize != 5 ) {
-    print STDERR
-"This script only accepts three args, start date, end date and rounded time.\nYou can also set an optional visibility group or role.\nBy default, visibility is set to 'public'.\n";
-    exit -1;
+Arguments:
+
+	--jira-url=https://yourorganizarion.atlassian.net
+	--jira-email=your-email@example.com
+	--jira-user=your-jira-user
+	--jira-password=your-jira-password
+	--toggl-api-token=your-jira-api-token
+	--rounded-time=minutes
+	--visibility-owner=group-or-role             Visibility is public by default.
+	--visibility-owner-name=group-or-role-name   When visibility-owner is set
+
+Required arguments are:
+
+	jira-url
+	jira-email
+	jira-user
+	jira-password
+	toggl-api-token
+
+Rules:
+
+	visibility-owner can only be set with group or role value
+
+	rounded-time -> Forces a group of time entries under the same day and name sum a total time multiple of rounded-time value
+
+Environment variable names:
+
+	This script does not look for a variable called jira-url, it looks for uppercase with lowslash as separator names.
+
+	So, environment variable for jira-url would be JIRA_URL
+
+More info can be found at https://git.windmaker.net/a-castellano/toggl-jira-work-logger
+EOF
+
+    say $usage;
+
+    exit 255;
 }
 
+sub get_variables {
+
+    my $required_variables_not_provided = 0;
+    my $help                            = undef;
+
+    my $variables = {
+        'jira-url'              => $ENV{'JIRA_URL'},
+        'jira-email'            => $ENV{'JIRA_EMAIL'},
+        'jira-user'             => $ENV{'JIRA_USER'},
+        'jira-password'         => $ENV{'JIRA_PASSWORD'},
+        'toggl-api-token'       => $ENV{'TOGGL_API_KEY'},
+        'rounded-time'          => $ENV{'ROUNDED_TIME'},
+        'visibility-owner'      => $ENV{'VISIBILITY_OWNER'},
+        'visibility-owner-name' => $ENV{'VISIBILITY_OWNER_NAME'},
+        'start-date'            => undef,
+        'end-date'              => undef,
+    };
+
+    # Getopts
+
+    GetOptions(
+        'jira-url=s'              => \$variables->{'jira-url'},
+        'jira-email=s'            => \$variables->{'jira-email'},
+        'jira-user=s'             => \$variables->{'jira-user'},
+        'jira-password=s'         => \$variables->{'jira-password'},
+        'toggl-api-token=s'       => \$variables->{'toggl-api-token'},
+        'rounded-time=i'          => \$variables->{'rounded-time'},
+        'visibility-owner=s'      => \$variables->{'visibility-owner'},
+        'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
+        'start-date=s'            => \$variables->{'start-date'},
+        'end-date=s'              => \$variables->{'end-date'},
+        'help'                    => \$help,
+    ) or ( say "Inavid options. Run $0 --help for usage." and exit 2 );
+
+    if ( defined($help) ) {
+        usage();
+    }
+
+    # Check required variables
+    for my $required_variable (
+        'jira-url',        'jira-email',
+        'jira-user',       'jira-password',
+        'toggl-api-token', 'start-date',
+        'end-date'
+      )
+    {
+        if ( !defined( $variables->{$required_variable} ) ) {
+            $required_variables_not_provided = 1;
+            say "\"$required_variable\" must be defined.";
+        }
+    }
+    if ($required_variables_not_provided) {
+        exit 2;
+    }
+
+    # Check visibility
+
+    if ( defined $variables->{'visibility-owner'} ) {
+        if (   ( $variables->{'visibility-owner'} ne "role" )
+            && ( $variables->{'visibility-owner'} ne "group" ) )
+        {
+            say "visibility-owner must be \"group\" or \"role\".";
+            exit 2;
+        }
+    }
+    else {
+        $variables->{'visibility-owner-name'} = 'public';
+        $variables->{'visibility-owner'}      = '';
+    }
+
+    # Check rounded time
+    if ( !defined( $variables->{'rounded-time'} ) ) {
+        $variables->{'rounded-time'} = 0;
+    }
+
+    return $variables;
+}
+
+#Main
+
+my $variables = get_variables();
+
+my @dates;
+
 # Provided dates must be valid
-for my $arg ( @ARGV[ 0 .. 1 ] ) {
-    my ( $y, $m, $d ) = $arg =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
-      or die "$arg is not a valid data.";
+for my $date ( 'start-date', 'end-date' ) {
+    my ( $y, $m, $d ) =
+      $variables->{$date} =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
+      or ( say "$date is not a valid data." and exit 2 );
 
     push(
         @dates,
@@ -371,35 +489,19 @@ my $first_date = $dates[0];
 my $last_date  = $dates[1];
 
 if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
-    die "Start date cannot be greater than end date.";
+    say "Start date cannot be greater than end date.";
+    exit 1;
 }
 
-my $rounded_time = $ARGV[2];
-
-if ( !( looks_like_number($rounded_time) ) ) {
-    die "Rounded time must be a number.";
+if ( !( looks_like_number( $variables->{'rounded-time'} ) ) ) {
+    say "Rounded time must be a number.";
+    exit 1;
 }
-
-# Set default visibility, if there is a fourth arg, it will be visibility default value
-
-if ( $argssize == 5 ) {
-    if ( ( $ARGV[3] ne "role" ) && ( $ARGV[3] ne "group" ) ) {
-        die "Fourth arg must be \"group\" or \"role\".";
-    }
-}
-
-my $visibility_type = "";
-my $visibility      = "public";
-
-$visibility_type = $ARGV[3] if ( $argssize == 5 );
-$visibility      = $ARGV[4] if ( $argssize == 5 );
-
-# All args parsed, count how many days have to be processed
 
 my $number_of_days = $last_date->delta_days($first_date)->days();
 
 # Create toggl instance
-my $toggl = Toggl::Wrapper->new( api_token => $toggl_api_token );
+my $toggl = Toggl::Wrapper->new( api_token => $variables->{'toggl-api-token'} );
 
 my $current_date = $first_date;
 
@@ -423,24 +525,30 @@ do {
     @entries =
       sort { $a->{id} <=> $b->{id} } @entries;
 
-    my @processed_entries =
-      process_time_entries( \@entries, $visibility_type, $visibility, $toggl,
-        $rounded_time );
+    my @processed_entries = process_time_entries(
+        \@entries,
+        $variables->{'visibility-owner'},
+        $variables->{'visibility-owner-name'},
+        $toggl, $variables->{'rounded-time'}
+    );
 
     if ( scalar @processed_entries ) {
 
         print "Sending Worklogs...";
 
-        log_entries( \@processed_entries, $toggl, $jira_url, $jira_email,
-            $jira_user, $jira_password );
+        log_entries(
+            \@processed_entries,       $toggl,
+            $variables->{'jira-url'},  $variables->{'jira-email'},
+            $variables->{'jira-user'}, $variables->{'jira-password'}
+        );
 
-        print "Entries logged.";
+        say "Entries logged.";
 
     }
     else {
-        print "There was no entries for that date.\n";
+        say "There was no entries for that date.";
     }
     $current_date = $next_date;
 } while ( DateTime->compare( $current_date, $last_date ) < 1 );
 
-print "All Done\n";
+say "All Done";
