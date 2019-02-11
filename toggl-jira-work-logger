@@ -154,36 +154,36 @@ sub process_time_entries {
                 $total_work_by_issue{$issue_id}{total_time} += $duration;
 
                 # Shows entry info to user
-                print "Issue $entry->{description}\n";
+                say "Issue $entry->{description}";
                 if ( grep { $_ eq "errored" } @{ $entry->{tags} } ) {
-                    print
-"\t** ERRORED: This issue was already tried to be registered but it failed. **\n";
+                    say
+"\t** ERRORED: This issue was already tried to be registered but it failed. **";
                 }
-                print "\tStarted at $entry->{start}\n";
-                print "\tEnded at $entry->{stop}\n";
-                print "\tWith the following duration: $duration minutes.\n";
+                say "\tStarted at $entry->{start}.";
+                say "\tEnded at $entry->{stop}.";
+                say "\tWith the following duration: $duration minutes.";
 
                 # User must specify what he/she did in every time entry
                 my $description = "";
                 do {
                     print "\tWhat did you do? -> ";
                     $description = <STDIN>;
-                    print "\n";
+                    say "";
                     if ( $description =~ /^\s*$/ ) {
-                        print
+                        say
 "\nYou Must provide a description for each time entry!\n";
                     }
                 } while ( $description =~ /^\s*$/ );
 
-                print
-"\tSet visibility (default is $visibility_type $visibility)\n";
+                say
+"\tSet visibility (default is $visibility_type $visibility)";
                 my $issue_visibility_type = "";
                 do {
                     print
 "\tRole or group (leave empty if you do not want to change it):";
                     $issue_visibility_type = <STDIN>;
                     chomp $issue_visibility_type;
-                    print "\n";
+                    say "";
                   } while ( $issue_visibility_type ne ""
                     && $issue_visibility_type ne "group"
                     && $issue_visibility_type ne "role" );
@@ -227,7 +227,7 @@ sub process_time_entries {
                         issue_visibility      => $issue_visibility
                     }
                 );
-                print "\n";
+                say "";
 
             }
         }
@@ -509,7 +509,7 @@ my $current_date = $first_date;
 
 do {
 
-    print "Processing entries from ", $current_date->strftime('%Y-%m-%d'), "\n";
+    say "Processing entries from ", $current_date->strftime('%Y-%m-%d'), "";
 
     my $next_date = $current_date->clone()->add( days => 1 );
 
