@@ -14,7 +14,7 @@ We have to set the following info:
 
 Sometimes, servers come down or a client or our Account Manager scales other issue which has more priority. I have to stop what I'm doing to handle that issue. IT support... you know.
 
-After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible.
+After few days working in this company I realized that we were spent so many minutes a day logging what we were doing so I tried to make that process as fast as possible, in my commute time of course.
 
 There is a [Toggl Integration with JIRA](https://toggl.com/jira-time-tracking/) which works actually fine. Any time I push the button a time entry is created in my toggl account, this entry has a subject composed by issue code (WORK-34 for example) and issue description. That integration allows me to know how many time I'm spending in every issue.
 
@@ -24,7 +24,7 @@ I wrote a [Wrapper able to manage Toggl time entries using its API](https://git.
 
 ## Ways to use this app
 
-There are two ways to run this app, using the CLI command or using [this project Docker image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger). 
+There are two ways to run this app, using the CLI command or using [this project Docker image](https://cloud.docker.com/u/acastellano/repository/docker/acastellano/toggl-jira-work-logger).
 
 Usage is almost the same for these ways, differences will be explained below.
 
@@ -51,13 +51,16 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 
 ## Usage
 
-**toggl-jira-work-logger** will use your toggl and JIRA accounts and users. You have to set the following environment variables before start using this utility.
+**toggl-jira-work-logger** will use your toggl and JIRA accounts and users. You can to set the following environment variables before start using this utility. Those variables values can be set as argumments.
 
 * **JIRA_URL** - Your Organization JIRA url.
-* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account. 
+* **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account.
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
+* ROUNDED_TIME - Round tasks time to this number of minutes (default is 0, time won't be changed)
+* VISIBILITY_OWNER - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
+* VISIBILITY_OWNER_NAME - If visibility owner has been set you must set the group/role's name, Developers for example..
 
 **Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
 
@@ -69,20 +72,22 @@ JIRA_EMAIL=alvaro.castellano.vela@gmail.com
 JIRA_USER=a-castellano
 JIRA_PASSWORD=Y0UR_J1Ra_Pa55W0RD
 TOGGL_API_KEY=yourtogglapitoken
+ROUNDED_TIME=15
+VISIBILITY_OWNER=role
+VISIBILITY_OWNER_NAME=Developers
 ```
 
-Include a line containing `source $HOME/.toggl-jira` in your bashrc if you are using the CLI.
+Include a line containing `export $(grep -v '^#' ~/.toggl-jira | xargs -d '\n')` in your bashrc if you are using the CLI.
 
 **toggl-jira-work-logger** needs three arguments to work
 * Start Date.
 * End Date.
-* Rounded time (for each issue, total time of entries will be rounded to that time).
 
 Optionaly your are able to set a default visibility group or role for your logs, by default these fields are empyty so visibility value is *public*. The visibility groups and roles has to have the same name that they have in your JIRA board.
 
 Let's see some examples:
 ```bash
-toggl-jira-work-logger 2018-04-05 2018-04-05 15
+toggl-jira-work-logger --start-date=2018-04-05 --end-date=2018-04-05 --rounded-time=15
 Processing entries from 2018-04-05
 Issue IT-761 Found error on in my app
 	Started at 2018-04-05T16:22:48+00:00
@@ -119,16 +124,17 @@ Issue IT-762 Test issue
 
 
 Sending Worklogs...Done.
-Entries logged.All Done
+Entries logged.
+All Done.
 ```
 
 You are also able to set another default visibility team:
 ```bash
-toggl-jira-work-logger 2018-04-05 2018-04-05 15 role developers
+toggl-jira-work-logger --start-date=2018-04-05 --end-date=2018-04-05 --rounded-time=15 --visibility-owner=role --visibility-owner-name=Developers
 ```
 Finally, each logged time entry is marked as "logged" in your toggl dashboard and it won't be logged again:
 ```bash
-toggl-jira-work-logger 2018-04-03 2018-04-04 15
+toggl-jira-work-logger --start-date=2018-04-03 --end-date=2018-04-04 --rounded-time=15
 Processing entries from 2018-04-03
 There was no entries for that date.
 Processing entries from 2018-04-04
@@ -141,7 +147,7 @@ All Done
 Sometimes you know....we misspell our visibility team name. If there is some error logging our entry it will be tagged as "errored", next time we run the script, these entry will be processed again (It has already been rounded if it was necessary)
 
 ```bash
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
+toggl-jira-work-logger --start-date=2018-04-17 --end-date=2018-04-17 --rounded-time=15 --visibility-owner=role --visibility-owner-name=Developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	Started at 2018-04-17T04:37:40+00:00
@@ -159,7 +165,7 @@ Detected and error in IT-762: An error ocurred: API call returned 400: Bad Reque
 Sending Worklogs...Done.
 Entries logged.All Done
 
-toggl-jira-work-logger 2018-04-17 2018-04-17 15 role developers
+toggl-jira-work-logger --start-date=2018-04-17 --end-date=2018-04-17 --rounded-time=15 --visibility-owner=role --visibility-owner-name=Developers
 Processing entries from 2018-04-17
 Issue IT-762 Test Issue
 	** ERRORED: This issue was already tried to be registered but it failed. **
@@ -174,7 +180,8 @@ Issue IT-762 Test Issue
 	Role or group name (leave empty if you do not want to change it):
 
 Sending Worklogs...Done.
-Entries logged.All Done
+Entries logged.
+All Done
 ```
 
 ### Docker usage
