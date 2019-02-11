@@ -331,7 +331,47 @@ sub log_entries {
 
 sub usage {
 
-    say "Usage $0";
+    my $usage = <<'EOF';
+
+toggl-jira-work-logger
+
+Utility to log work into Jira issues using Toggl recorded time entries.
+
+Usage:
+
+    toggl-jira-work-logger --start-date=DATE --end-date=DATE [ARGUMENTS]
+
+For avoiding user to wirte thier secret credentials in the command line
+this script will look for config variables in shell environment. All variables
+except start-date and end-data can be set as environment variables.
+
+Arguments:
+
+	--jira-url=https://yourorganizarion.atlassian.net
+	--jira-email=your-email@example.com
+	--jira-user=your-jira-user
+	--jira-password=your-jira-password
+	--toggl-api-token=your-jira-api-token
+	--rounded-time=minutes
+	--visibility-owner=group-or-role             Visibility is public by default.
+	--visibility-owner-name=group-or-role-name   When visibility-owner is set
+
+Required arguments are:
+	jira-url
+	jira-email
+	jira-user
+	jira-password
+	toggl-api-token
+
+Rules:
+	visibility-owner can only be set with group or role value
+
+	rounded-time -> Forces a group of time entries under the same day and name sum a total time multiple of rounded-time value
+
+More info can be found at https://git.windmaker.net/a-castellano/toggl-jira-work-logger
+EOF
+
+	say $usage;
 
     exit 255;
 }
@@ -441,11 +481,13 @@ my $first_date = $dates[0];
 my $last_date  = $dates[1];
 
 if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
-    die "Start date cannot be greater than end date.";
+    say "Start date cannot be greater than end date.";
+	exit 1;
 }
 
 if ( !( looks_like_number( $variables->{'rounded-time'} ) ) ) {
-    die "Rounded time must be a number.";
+    say "Rounded time must be a number.";
+	exit 1;
 }
 
 my $number_of_days = $last_date->delta_days($first_date)->days();
