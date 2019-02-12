@@ -58,9 +58,9 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
-* ROUNDED_TIME - Round tasks time to this number of minutes (default is 0, time won't be changed)
-* VISIBILITY_OWNER - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
-* VISIBILITY_OWNER_NAME - If visibility owner has been set you must set the group/role's name, Developers for example..
+* **ROUNDED_TIME** - Round tasks time to this number of minutes (default is 0, time won't be changed)
+* **VISIBILITY_OWNER** - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
+* **VISIBILITY_OWNER_NAME** - If visibility owner has been set you must set the group/role's name, Developers for example..
 
 **Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
 
@@ -79,7 +79,7 @@ VISIBILITY_OWNER_NAME=Developers
 
 Include a line containing `export $(grep -v '^#' ~/.toggl-jira | xargs -d '\n')` in your bashrc if you are using the CLI.
 
-**toggl-jira-work-logger** needs three arguments to work
+**toggl-jira-work-logger** needs two arguments to work:
 * Start Date.
 * End Date.
 
