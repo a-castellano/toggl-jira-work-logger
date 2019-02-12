@@ -193,3 +193,12 @@ Call this utility with `docker run`, behaviour will be the same as above.
 docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-logger toggl-jira-work-logger --start-date=2019-02-02 --end-date=2019-02-02 --rounded-time=15 --visibility-owner-name=Developers
 ```
 
+### Toggl dasboard behaviour
+
+**Before**
+
+![Before](images/Before.png)
+
+**After**
+
+![After](images/After.png)
