@@ -3,6 +3,8 @@ Utility to log work into Jira issues using Toggl recorded time entries.
 
 [Actual Repo](https://git.windmaker.net/a-castellano/toggl-jira-work-logger)
 
+[![asciicast](https://asciinema.org/a/226897.svg)](https://asciinema.org/a/226897?speed=2)
+
 ## Why I wrote this utility?
 
 Every day at IT department I have to handle many issues. For each issue, head of department asks us to log our work in Company's JIRA account.
