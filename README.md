@@ -3,6 +3,8 @@ Utility to log work into Jira issues using Toggl recorded time entries.
 
 [Actual Repo](https://git.windmaker.net/a-castellano/toggl-jira-work-logger)
 
+[![asciicast](https://asciinema.org/a/226897.svg)](https://asciinema.org/a/226897?speed=2)
+
 ## Why I wrote this utility?
 
 Every day at IT department I have to handle many issues. For each issue, head of department asks us to log our work in Company's JIRA account.
@@ -191,3 +193,12 @@ Call this utility with `docker run`, behaviour will be the same as above.
 docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-logger toggl-jira-work-logger --start-date=2019-02-02 --end-date=2019-02-02 --rounded-time=15 --visibility-owner-name=Developers
 ```
 
+### Toggl dasboard behaviour
+
+**Before**
+
+![Before](images/Before.png)
+
+**After**
+
+![After](images/After.png)
