@@ -8,6 +8,6 @@ COPY repo/WINDMAKER-GPG-KEY.pub /tmp/WINDMAKER-GPG-KEY.pub
 
 RUN apt-key add /tmp/WINDMAKER-GPG-KEY.pub && apt-get update -qq
 
-ARG CACHE_DATE=2018-02-20
+ARG CACHE_TS=default_ts
 
 RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger --no-install-recommends && rm -rf /var/lib/apt/lists/*
