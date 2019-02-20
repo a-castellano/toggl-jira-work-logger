@@ -4,7 +4,7 @@ MAINTAINER Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>
 COPY repo/windmaker-develop.list /etc/apt/sources.list.d/windmaker.list
 COPY repo/WINDMAKER-GPG-KEY.pub /tmp/WINDMAKER-GPG-KEY.pub
 
-RUN apt-key add /tmp/WINDMAKER-GPG-KEY.pub && apt-get update -qq
+RUN apt-get update -qq --allow-unauthenticated
 
 ARG CACHE_DATE=2018-02-20
 
