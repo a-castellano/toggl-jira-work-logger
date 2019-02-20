@@ -42,6 +42,7 @@ dev_docker_build:
     stage: docker_build
     image: docker:stable
     script:
+        - ls -lahrt
         - VERSION=$(cat VERSION)
         - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
         - docker login --username acastellano --password $DOCKERHUBPASSWORD
