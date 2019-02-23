@@ -360,6 +360,14 @@ Arguments:
 	--visibility-owner=group-or-role             Visibility is public by default.
 	--visibility-owner-name=group-or-role-name   When visibility-owner is set
 
+Especial date argumments:
+
+It is allowd log entries from current day, current week or current month.
+
+	--today	Logs current day.
+	--week	Logs current week.
+	--month	Logs current month.
+
 Required arguments are:
 
 	jira-url
