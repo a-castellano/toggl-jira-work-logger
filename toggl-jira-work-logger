@@ -16,12 +16,13 @@ use JSON;
 use DateTime;
 use DateTime::Format::Strptime qw(  );
 use Date::Calc qw/Delta_Days/;
-use Carp qw(croak);
 use Try::Tiny;
 use Scalar::Util qw(looks_like_number);
 use Getopt::Long qw(GetOptions);
 
 use Toggl::Wrapper;
+
+use Data::Dumper;
 
 use constant USER_AGENT       => "toggl-jira-work-logger";
 use constant JIRA_API_SUB_URL => "/rest/api/2";
@@ -64,10 +65,13 @@ sub make_api_call {
         my $code    = $r->code;
         my $message = $r->message;
         if ( $code == 403 ) {
-            croak "Check your credentaials: API call returned $code: $message";
+            say "Check your credentaials: API call returned $code: $message";
+			exit 1;
         }
         else {
-            croak "An error ocurred: API call returned $code: $message";
+            say "An error ocurred: API call returned $code: $message";
+			exit 1;
+
         }
     }
 }
@@ -415,12 +419,44 @@ sub get_variables {
         'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
         'start-date=s'            => \$variables->{'start-date'},
         'end-date=s'              => \$variables->{'end-date'},
+        'today'              => \$variables->{'today'},
+        'week'              => \$variables->{'week'},
+        'month'              => \$variables->{'month'},
         'help'                    => \$help,
     ) or ( say "Inavid options. Run $0 --help for usage." and exit 2 );
 
     if ( defined($help) ) {
         usage();
     }
+
+    # Check if special dates are defined
+	my $test = (defined $variables->{'today'}) + (defined $variables->{'week'});
+	say $test;
+	if (((defined $variables->{'today'}) + (defined $variables->{'week'}) + (defined $variables->{month})) > 1)
+	{
+            say "Using more than one special date (today, week, month) is not allowed.";
+			exit -1;
+	}
+	else{
+	if ((defined $variables->{'today'}) xor (defined $variables->{'week'}) xor (defined $variables->{'month'})){
+
+		if( (defined $variables->{'start-date'}) or (defined $variables->{'end-date'}) ){
+			say "Using special date (today, week, month) overrides start-date and end-date".
+		}
+
+		if (defined $variables->{'today'}){
+my ($sec,$min,$hour,$mday,$mon,$year,$wday,$yday,$isdst) =  localtime();
+$variables->{'start-date'} = sprintf("%04d-%02d-%02d",$year+1900,$mon,$mday);
+$variables->{'end-date'} = $variables->{'start-date'};
+		}
+		elsif (defined $variables->{'week'}){
+
+		}
+		else{ # month
+
+		}
+	}
+	}
 
     # Check required variables
     for my $required_variable (
@@ -458,6 +494,10 @@ sub get_variables {
     if ( !defined( $variables->{'rounded-time'} ) ) {
         $variables->{'rounded-time'} = 0;
     }
+
+	die Dumper($variables);
+exit -1;
+
 
     return $variables;
 }
