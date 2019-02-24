@@ -11,10 +11,10 @@ dev_package:
         - mkdir build
         - mv ../*.deb build/
         - PACKAGE=$(ls build)
-        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/file/toggl-jira-work-logger
-        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/snapshots"
-        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"testing\", \"Name\": \"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any"
+        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
+        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/file/toggl-jira-work-logger || exit 1
+        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/snapshots || exit 1"
+        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"testing\", \"Name\": \"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any || exit 1"
     artifacts:
         paths:
             - build/*
@@ -30,10 +30,10 @@ package:
         - mkdir build
         - mv ../*.deb build/
         - PACKAGE=$(ls build)
-        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/file/toggl-jira-work-logger
-        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/snapshots"
-        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"main\", \"Name\": \"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any"
+        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
+        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/file/toggl-jira-work-logger || exit 1
+        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/snapshots || exit 1"
+        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"main\", \"Name\": \"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any || exit 1"
     artifacts:
         paths:
             - build/*
@@ -43,7 +43,7 @@ dev_docker_build:
     image: docker:stable
     script:
         - VERSION=$(cat VERSION)
-        - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
+        - docker build --build-arg CACHE_TS=$(date +%s) -t toggl-jira-work-logger-develop -f Dockerfile-develop .
         - docker login --username acastellano --password $DOCKERHUBPASSWORD
         - docker create --name=toggl-jira-work-logger-develop -i toggl-jira-work-logger-develop
         - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger-develop acastellano/toggl-jira-work-logger-develop

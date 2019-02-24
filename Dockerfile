@@ -1,10 +1,10 @@
 FROM ubuntu:bionic
 MAINTAINER Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>
 
+RUN apt-get update -qq && apt-get install -qq -o=Dpkg::Use-Pty=0 -y gnupg ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*
+COPY repo/windmaker.list /etc/apt/sources.list.d/windmaker.list
+COPY repo/WINDMAKER-GPG-KEY.pub /tmp/WINDMAKER-GPG-KEY.pub
+RUN apt-key add /tmp/WINDMAKER-GPG-KEY.pub
+ARG CACHE_TS=default_ts
 RUN apt-get update -qq
-RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y wget gnupg
-RUN wget -O - http://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | apt-key add
-RUN echo "deb http://packages.windmaker.net/ any main" > /etc/apt/sources.list.d/windmaker.list
-RUN echo "deb [ arch=amd64 ] http://packages.windmaker.net/ bionic main" >> /etc/apt/sources.list.d/windmaker.list
-RUN apt-get update -qq
-RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger
+RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger --no-install-recommends && rm -rf /var/lib/apt/lists/*

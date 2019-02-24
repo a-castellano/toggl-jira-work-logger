@@ -1,3 +1,28 @@
+toggl-jira-work-logger (0.6.0-1) stable; urgency=medium
+
+  * New date selectors, today, week, month
+  * Allow JIRA auth using JIRA API key.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 16:37:00 +0200
+
+toggl-jira-work-logger (0.5.2-1) unstable; urgency=low
+
+  * Allow JIRA auth using JIRA API key.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 15:33:00 +0200
+
+toggl-jira-work-logger (0.5.1-1) unstable; urgency=low
+
+  * Usage updated
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 02:00:00 +0200
+
+toggl-jira-work-logger (0.5.0-1) unstable; urgency=low
+
+  * New date selectors, today, week, month
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 23 Feb 2019 13:23:00 +0200
+
 toggl-jira-work-logger (0.4.0-1) stable; urgency=medium
 
   * Remove positional arguments, use getopts instead.
