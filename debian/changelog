@@ -1,3 +1,9 @@
+toggl-jira-work-logger (0.5.2-1) unstable; urgency=low
+
+  * Allow JIRA auth using JIRA API key.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 15:33:00 +0200
+
 toggl-jira-work-logger (0.5.1-1) unstable; urgency=low
 
   * Usage updated

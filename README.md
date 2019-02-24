@@ -59,12 +59,17 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 * **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account.
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
+* **JIRA_API_TOKEN** - Your JIRA API token
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
 * **ROUNDED_TIME** - Round tasks time to this number of minutes (default is 0, time won't be changed)
 * **VISIBILITY_OWNER** - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
 * **VISIBILITY_OWNER_NAME** - If visibility owner has been set you must set the group/role's name, Developers for example..
 
 **Warning!** If you are using Docker you must include TZ environment variable to let the Docker Container know in which timezone we are. 
+
+### Auth Options
+
+Jira auth can be performed using your password or your JIRA API token. If jira-api-token and password are set and password is nod used. 
 
 For example, place the following content at **$HOME/.toggl-jira**
 ```
@@ -73,6 +78,7 @@ JIRA_URL=https://company.atlassian.net
 JIRA_EMAIL=alvaro.castellano.vela@gmail.com
 JIRA_USER=a-castellano
 JIRA_PASSWORD=Y0UR_J1Ra_Pa55W0RD
+JIRA_API_TOKEN=Y0URJ1RaAP15T0K3n
 TOGGL_API_KEY=yourtogglapitoken
 ROUNDED_TIME=15
 VISIBILITY_OWNER=role
