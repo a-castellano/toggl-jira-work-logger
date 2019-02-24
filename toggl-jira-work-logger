@@ -16,12 +16,13 @@ use JSON;
 use DateTime;
 use DateTime::Format::Strptime qw(  );
 use Date::Calc qw/Delta_Days/;
-use Carp qw(croak);
 use Try::Tiny;
 use Scalar::Util qw(looks_like_number);
 use Getopt::Long qw(GetOptions);
 
 use Toggl::Wrapper;
+
+use Data::Dumper;
 
 use constant USER_AGENT       => "toggl-jira-work-logger";
 use constant JIRA_API_SUB_URL => "/rest/api/2";
@@ -64,10 +65,13 @@ sub make_api_call {
         my $code    = $r->code;
         my $message = $r->message;
         if ( $code == 403 ) {
-            croak "Check your credentaials: API call returned $code: $message";
+            say "Check your credentaials: API call returned $code: $message";
+            exit 1;
         }
         else {
-            croak "An error ocurred: API call returned $code: $message";
+            say "An error ocurred: API call returned $code: $message";
+            exit 1;
+
         }
     }
 }
@@ -176,7 +180,7 @@ sub process_time_entries {
                 } while ( $description =~ /^\s*$/ );
 
                 say
-"\tSet visibility (default is $visibility_type $visibility)";
+                  "\tSet visibility (default is $visibility_type $visibility)";
                 my $issue_visibility_type = "";
                 do {
                     print
@@ -356,6 +360,14 @@ Arguments:
 	--visibility-owner=group-or-role             Visibility is public by default.
 	--visibility-owner-name=group-or-role-name   When visibility-owner is set
 
+Especial date argumments:
+
+It is allowd log entries from current day, current week or current month.
+
+	--today	Logs current day.
+	--week	Logs current week.
+	--month	Logs current month.
+
 Required arguments are:
 
 	jira-url
@@ -415,11 +427,106 @@ sub get_variables {
         'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
         'start-date=s'            => \$variables->{'start-date'},
         'end-date=s'              => \$variables->{'end-date'},
+        'today'                   => \$variables->{'today'},
+        'week'                    => \$variables->{'week'},
+        'month'                   => \$variables->{'month'},
         'help'                    => \$help,
     ) or ( say "Inavid options. Run $0 --help for usage." and exit 2 );
 
     if ( defined($help) ) {
         usage();
+    }
+
+    # Check if special dates are defined
+    my $special_dates =
+      ( defined $variables->{'today'} ) +
+      ( defined $variables->{'week'} ) +
+      ( defined $variables->{month} );
+    if ( $special_dates > 0 ) {
+        if ( $special_dates > 1 ) {
+            say
+"Using more than one special date (today, week, month) is not allowed.";
+            exit -1;
+        }
+        else {
+            if ( ( defined $variables->{'today'} )
+                xor( defined $variables->{'week'} )
+                xor( defined $variables->{'month'} ) )
+            {
+
+                if (   ( defined $variables->{'start-date'} )
+                    or ( defined $variables->{'end-date'} ) )
+                {
+                    say
+"Use of special date (today, week, month) overrides start-date and end-date.";
+                }
+
+                my (
+                    $sec,  $min,  $hour, $mday, $mon,
+                    $year, $wday, $yday, $isdst
+                ) = localtime();
+                my $current_day = DateTime->new(
+                    year      => $year + 1900,
+                    month     => $mon + 1,
+                    day       => $mday,
+                    time_zone => 'local',
+                );
+
+                if ( defined $variables->{'today'} ) {
+                    $variables->{'start-date'} = $current_day;
+                    $variables->{'end-date'}   = $variables->{'start-date'};
+                }
+                elsif ( defined $variables->{'week'} ) {
+
+                    # 0 Sunday
+                    # 6 Saturday
+                    $variables->{'start-date'} =
+                      $current_day->clone()->subtract( days => $wday );
+                    $variables->{'end-date'} =
+                      $current_day->clone()->add( days => ( 6 - $wday ) );
+                }
+                else {    # month
+                    $variables->{'start-date'} =
+                      $current_day->clone()->subtract( days => $mday - 1 );
+                    $variables->{'end-date'} =
+                      $variables->{'start-date'}->clone()->add( months => 1 )
+                      ->subtract( days => 1 );
+                }
+            }
+        }
+    }
+    else {
+        my @dates;
+
+        # Provided dates must be valid
+        for my $date ( 'start-date', 'end-date' ) {
+            my ( $y, $m, $d ) =
+              $variables->{$date} =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
+              or ( say "$date is not a valid data." and exit 2 );
+
+            push(
+                @dates,
+                DateTime->new(
+                    year      => $y,
+                    month     => $m,
+                    day       => $d,
+                    time_zone => 'local',
+                )
+            );
+        }
+
+        $variables->{'start-date'} = $dates[0];
+        $variables->{'end-date'}   = $dates[1];
+
+        if (
+            DateTime->compare( $variables->{'start-date'},
+                $variables->{'end-date'} ) == 1
+          )
+        {
+            say "Start date cannot be greater than end date.";
+            exit 1;
+        }
+
     }
 
     # Check required variables
@@ -466,44 +573,18 @@ sub get_variables {
 
 my $variables = get_variables();
 
-my @dates;
-
-# Provided dates must be valid
-for my $date ( 'start-date', 'end-date' ) {
-    my ( $y, $m, $d ) =
-      $variables->{$date} =~ /^([0-9]{4})-([0-1][0-9])-([0-3][0-9])\z/
-      or ( say "$date is not a valid data." and exit 2 );
-
-    push(
-        @dates,
-        DateTime->new(
-            year      => $y,
-            month     => $m,
-            day       => $d,
-            time_zone => 'local',
-        )
-    );
-}
-
-my $first_date = $dates[0];
-my $last_date  = $dates[1];
-
-if ( DateTime->compare( $first_date, $last_date ) == 1 ) {
-    say "Start date cannot be greater than end date.";
-    exit 1;
-}
-
 if ( !( looks_like_number( $variables->{'rounded-time'} ) ) ) {
     say "Rounded time must be a number.";
     exit 1;
 }
 
-my $number_of_days = $last_date->delta_days($first_date)->days();
+my $number_of_days =
+  $variables->{'end-date'}->delta_days( $variables->{'start-date'} )->days();
 
 # Create toggl instance
 my $toggl = Toggl::Wrapper->new( api_token => $variables->{'toggl-api-token'} );
 
-my $current_date = $first_date;
+my $current_date = $variables->{'start-date'};
 
 # Process entries day by day
 
@@ -549,6 +630,6 @@ do {
         say "There was no entries for that date.";
     }
     $current_date = $next_date;
-} while ( DateTime->compare( $current_date, $last_date ) < 1 );
+} while ( DateTime->compare( $current_date, $variables->{'end-date'} ) < 1 );
 
 say "All Done";
