@@ -1,3 +1,10 @@
+toggl-jira-work-logger (0.6.0-1) stable; urgency=medium
+
+  * New date selectors, today, week, month
+  * Allow JIRA auth using JIRA API key.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 16:37:00 +0200
+
 toggl-jira-work-logger (0.5.2-1) unstable; urgency=low
 
   * Allow JIRA auth using JIRA API key.

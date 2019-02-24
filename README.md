@@ -59,7 +59,7 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 * **JIRA_EMAIL** - The e-mail that you use to log in your Organization JIRA account.
 * **JIRA_USER** - Your username
 * **JIRA_PASSWORD** - Your Password
-* **JIRA_API_TOKEN** - Your JIRA API token
+* **JIRA_API_TOKEN** - Your [JIRA API token](https://confluence.atlassian.com/cloud/api-tokens-938839638.html)
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
 * **ROUNDED_TIME** - Round tasks time to this number of minutes (default is 0, time won't be changed)
 * **VISIBILITY_OWNER** - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
@@ -69,7 +69,7 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 
 ### Auth Options
 
-Jira auth can be performed using your password or your JIRA API token. If jira-api-token and password are set and password is nod used. 
+Jira auth can be performed using your password or your [JIRA API token](https://confluence.atlassian.com/cloud/api-tokens-938839638.html). If jira-api-token and password are set and password is nod used. 
 
 For example, place the following content at **$HOME/.toggl-jira**
 ```
@@ -149,6 +149,11 @@ Processing entries from 2018-04-04
 There was no entries for that date.
 All Done
 ```
+
+Special date arguments can be used instead of start-date and end-date:
+* **--today** - Logs current day.
+* **--week** - Logs current week (It starts on Sunday).
+* **--month** - Logs current month.
 
 **Errored entries**
 
