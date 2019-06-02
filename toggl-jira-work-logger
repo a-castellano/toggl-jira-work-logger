@@ -131,6 +131,7 @@ sub process_time_entries {
     my $visibility      = shift;
     my $toggl           = shift;
     my $rounded_time    = shift;
+    my $minimum_time    = shift;
 
     my @entries = @{$entries};
 
@@ -145,7 +146,8 @@ sub process_time_entries {
         my $match = grep( /^logged$/s, @{ $entry->{tags} } );
 
         if (
-            $entry->{duration} >= 300    # Ignore entries brief than 5 minutes
+            $entry->{duration} >=
+            $minimum_time    # Ignore entries brief than 5 minutes
             and (
                 !exists $entry->{tags}    # And entries already logged
                 or $match == 0
@@ -402,6 +404,7 @@ Arguments:
 	--jira-api-token=your-jira-api-token
 	--toggl-api-token=your-jira-api-token
 	--rounded-time=minutes
+	--minimum-time=minute                        By default it will be 5 minutes, behind this time time entry will be skipped.
 	--visibility-owner=group-or-role             Visibility is public by default.
 	--visibility-owner-name=group-or-role-name   When visibility-owner is set
 
@@ -460,6 +463,7 @@ sub get_variables {
         'rounded-time'          => $ENV{'ROUNDED_TIME'},
         'visibility-owner'      => $ENV{'VISIBILITY_OWNER'},
         'visibility-owner-name' => $ENV{'VISIBILITY_OWNER_NAME'},
+        'minimum-time'          => $ENV{'MINIMUM-TIME'},
         'start-date'            => undef,
         'end-date'              => undef,
     };
@@ -476,6 +480,7 @@ sub get_variables {
         'rounded-time=i'          => \$variables->{'rounded-time'},
         'visibility-owner=s'      => \$variables->{'visibility-owner'},
         'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
+        'minimum-time=i'          => \$variables->{'minimum-time'},
         'start-date=s'            => \$variables->{'start-date'},
         'end-date=s'              => \$variables->{'end-date'},
         'today'                   => \$variables->{'today'},
@@ -486,6 +491,13 @@ sub get_variables {
 
     if ( defined($help) ) {
         usage();
+    }
+
+    if ( !$variables->{'minimum-time'} ) {
+        $variables->{'minimum-time'} = 300;
+    }
+    else {
+        $variables->{'minimum-time'} = $variables->{'minimum-time'} * 60;
     }
 
     # Check if special dates are defined
@@ -677,7 +689,9 @@ do {
         \@entries,
         $variables->{'visibility-owner'},
         $variables->{'visibility-owner-name'},
-        $toggl, $variables->{'rounded-time'}
+        $toggl,
+        $variables->{'rounded-time'},
+        $variables->{'minimum-time'}
     );
 
     if ( scalar @processed_entries ) {
