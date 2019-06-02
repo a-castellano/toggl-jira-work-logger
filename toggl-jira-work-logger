@@ -35,7 +35,12 @@ sub make_api_call {
     my $headers   = $call->{headers};
     my $data      = $call->{data};
     my $json_data = "";
-    my $wrapper   = LWP::UserAgent->new(
+
+    my $api_response;
+    $api_response->{status}  = 1;
+    $api_response->{message} = q{};
+
+    my $wrapper = LWP::UserAgent->new(
         agent      => USER_AGENT,
         cookie_jar => {}
     );
@@ -56,24 +61,19 @@ sub make_api_call {
 
     my $response = $wrapper->request($request);
     if ( $response->is_success ) {
-        $response = $response->decoded_content;
-        my $json = parse_json($response);
-        return $json;
+        $response                = $response->decoded_content;
+        $api_response->{status}  = 1;
+        $api_response->{message} = parse_json($response);
     }
     else {
         my $r       = HTTP::Response->parse( $response->status_line );
         my $code    = $r->code;
         my $message = $r->message;
-        if ( $code == 403 ) {
-            say "Check your credentaials: API call returned $code: $message";
-            exit 1;
-        }
-        else {
-            say "An error ocurred: API call returned $code: $message";
-            exit 1;
-
-        }
+        $api_response->{status}  = 0;
+        $api_response->{code}    = $code;
+        $api_response->{message} = $message;
     }
+    return $api_response;
 }
 
 sub work_log {
@@ -119,6 +119,8 @@ sub work_log {
             data => \%data,
         }
     );
+
+    return $response;
 
 }
 
@@ -289,25 +291,23 @@ sub log_entries {
     my @entry_ids;
     my @failed_ids;
     foreach my $entry (@processed_entries) {
-        my $no_errors = 0;
-        try {
-            work_log(
-                $jira_url,                       $jira_email,
-                $jira_user,                      $jira_password,
-                $entry->{issue_id},              $entry->{started},
-                $entry->{duration},              $entry->{description},
-                $entry->{issue_visibility_type}, $entry->{issue_visibility}
-            );
-            $no_errors = 1;
-        }
-        catch {
-            warn
-"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
-            $no_errors = 0;
-            push( @failed_ids, int( $entry->{id} ) );
-        };
+        my $no_errors         = 0;
+        my $work_log_response = work_log(
+            $jira_url,                       $jira_email,
+            $jira_user,                      $jira_password,
+            $entry->{issue_id},              $entry->{started},
+            $entry->{duration},              $entry->{description},
+            $entry->{issue_visibility_type}, $entry->{issue_visibility}
+        );
+        $no_errors = $work_log_response->{status};
+
         if ($no_errors) {
             push( @entry_ids, int( $entry->{id} ) );
+        }
+        else {
+            say
+"Detected and error in $entry->{issue_id}: $work_log_response->{message}\n\tThis error has been registered in your toggl dashboard.";
+            push( @failed_ids, int( $entry->{id} ) );
         }
     }
 
@@ -638,7 +638,7 @@ do {
 
     if ( scalar @processed_entries ) {
 
-        print "Sending Worklogs...";
+        say "Sending Worklogs...";
 
         log_entries(
             \@processed_entries,       $toggl,
