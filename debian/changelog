@@ -1,3 +1,7 @@
+toggl-jira-work-logger (0.7.0-1) stable; urgency=medium
+
+  * Check if start date and end date is defined
+
 toggl-jira-work-logger (0.6.0-1) stable; urgency=medium
 
   * New date selectors, today, week, month
