@@ -1,3 +1,14 @@
+toggl-jira-work-logger (0.8.1-2) stable; urgency=medium
+
+  * Added option to specify minimum time in minutes for a time entry to be
+    logged.
+  * Check if start date and end date is defined.
+  * Deal with non existent Jira tasks.
+  * Append tags instead of replace all existing tags by 'logged' or 'errored'.
+  * Read JIRA task ID from tags if there is no tags defined in description.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Sun, 02 Jun 2019 22:29:00 +0200
+
 toggl-jira-work-logger (0.7.3-1) unstable; urgency=medium
 
   * Added option to specify minimum time in minutes for a time entry to be
