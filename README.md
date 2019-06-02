@@ -213,3 +213,18 @@ docker run --rm  -it  --env-file=$HOME/.toggl-jira acastellano/toggl-jira-work-l
 **After**
 
 ![After](images/After.png)
+
+### Reading JIRA task ID's from tags
+
+Jira task ID's are usually read from toggl time entry description. If there is no JIRA task ID in description it will be gotten from tags. There can only be and ID inside time entries tags so this script will warn you about it and this time entry will be not logged.
+
+Let's see an example:
+
+**Before**
+
+![Before](images/BeforeTags.png)
+
+**After**
+
+![After](images/AfterTags.png)
+
