@@ -503,6 +503,15 @@ sub get_variables {
         }
     }
     else {
+
+        # Check if dates are defined
+        if (   ( !( $variables->{'start-date'} ) )
+            or ( !( $variables->{'end-date'} ) ) )
+        {
+            say "'start-date' and 'end-date' must be defined.";
+            exit 1;
+        }
+
         my @dates;
 
         # Provided dates must be valid
