@@ -1,3 +1,12 @@
+toggl-jira-work-logger (0.8.1-1) stable; urgency=medium
+
+  * Check if start date and end date is defined.
+  * Deal with non existent Jira tasks.
+  * Append tags instead of replace all existing tags by 'logged' or 'errored'.
+  * Read JIRA task ID from tags if there is no tags defined in description.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Sun, 02 Jun 2019 22:29:00 +0200
+
 toggl-jira-work-logger (0.7.2-1) unstable; urgency=medium
 
   * Append tags instead of replace all existing tags by 'logged' or 'errored'.
