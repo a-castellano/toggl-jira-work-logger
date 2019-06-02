@@ -1,10 +1,18 @@
-toggl-jira-work-logger (0.7.0-1) stable; urgency=medium
+toggl-jira-work-logger (0.7.1-1) unstable; urgency=medium
 
-  * Check if start date and end date is defined
+  * Deal with non existent Jira tasks.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Sun, 02 Jun 2019 12:37:00 +0200
+
+toggl-jira-work-logger (0.7.0-1) unstable; urgency=medium
+
+  * Check if start date and end date is defined.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Sun, 02 Jun 2019 12:37:00 +0200
 
 toggl-jira-work-logger (0.6.0-1) stable; urgency=medium
 
-  * New date selectors, today, week, month
+  * New date selectors, today, week, month.
   * Allow JIRA auth using JIRA API key.
 
  -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Mon, 24 Feb 2019 16:37:00 +0200
