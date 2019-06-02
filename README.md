@@ -62,6 +62,7 @@ There is also a [Docker Image](https://hub.docker.com/r/acastellano/toggl-jira-w
 * **JIRA_API_TOKEN** - Your [JIRA API token](https://confluence.atlassian.com/cloud/api-tokens-938839638.html)
 * **TOGGL_API_KEY** - Your [Toggl API token](https://support.toggl.com/api-token/)
 * **ROUNDED_TIME** - Round tasks time to this number of minutes (default is 0, time won't be changed)
+* **MINIMUM_TIME** - Minimum time in minutes for a time entrie to be logged (default value is 5 minutes)
 * **VISIBILITY_OWNER** - You are able to show JIRA work logs and comments only to certain groups or roles. Leaving empty this value mens that your comment will be public. Allowed values are role or group.
 * **VISIBILITY_OWNER_NAME** - If visibility owner has been set you must set the group/role's name, Developers for example..
 
@@ -81,6 +82,7 @@ JIRA_PASSWORD=Y0UR_J1Ra_Pa55W0RD
 JIRA_API_TOKEN=Y0URJ1RaAP15T0K3n
 TOGGL_API_KEY=yourtogglapitoken
 ROUNDED_TIME=15
+MINIMUM_TIME=5
 VISIBILITY_OWNER=role
 VISIBILITY_OWNER_NAME=Developers
 ```

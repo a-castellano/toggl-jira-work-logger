@@ -1,3 +1,10 @@
+toggl-jira-work-logger (0.7.3-1) unstable; urgency=medium
+
+  * Added option to specify minimum time in minutes for a time entry to be
+    logged.
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Sun, 02 Jun 2019 22:06:00 +0200
+
 toggl-jira-work-logger (0.7.2-1) unstable; urgency=medium
 
   * Append tags instead of replace all existing tags by 'logged' or 'errored'.
