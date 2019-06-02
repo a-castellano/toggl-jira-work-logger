@@ -137,6 +137,9 @@ sub process_time_entries {
     my %total_work_by_issue;
     my @processed_entries;
 
+    my $issue_id;
+    my $got_issue_id_from_description;
+
     for my $entry (@entries) {
 
         if (
@@ -150,7 +153,27 @@ sub process_time_entries {
         {
 
             if ( $entry->{description} =~ /^\s*([A-Z0-9]+-[0-9]+)/ ) {
-                my $issue_id = $1;
+                $issue_id                      = $1;
+                $got_issue_id_from_description = 1;
+            }
+            else {
+                # Maybe entry id is placed entry tags
+                my @candidate_ids =
+                  grep ( /^\s*([A-Z0-9]+-[0-9]+)$/, @{ $entry->{tags} } );
+                if ( scalar @candidate_ids > 1 ) {
+                    say "Issue: $entry->{description}";
+                    say "\tStarted at $entry->{start}.";
+                    say "\tEnded at $entry->{stop}.";
+                    say
+"This issue is related with more than one JIRA ID: @candidate_ids";
+                    say "Warning - This issue won't be logged.";
+                }
+                elsif ( scalar @candidate_ids == 1 ) {
+                    $issue_id                      = $candidate_ids[0];
+                    $got_issue_id_from_description = 0;
+                }
+            }
+            if ($issue_id) {
 
                 my $duration = int( $entry->{'duration'} / 60 );
 
@@ -160,7 +183,12 @@ sub process_time_entries {
                 $total_work_by_issue{$issue_id}{total_time} += $duration;
 
                 # Shows entry info to user
-                say "Issue $entry->{description}";
+                if ( $got_issue_id_from_description == 1 ) {
+                    say "Issue: $entry->{description}";
+                }
+                else {
+                    say "Issue: $issue_id $entry->{description}";
+                }
                 if ( grep { $_ eq "errored" } @{ $entry->{tags} } ) {
                     say
 "\t** ERRORED: This issue was already tried to be registered but it failed. **";
