@@ -142,11 +142,13 @@ sub process_time_entries {
 
     for my $entry (@entries) {
 
+        my $match = grep( /^logged$/s, @{ $entry->{tags} } );
+
         if (
             $entry->{duration} >= 300    # Ignore entries brief than 5 minutes
             and (
                 !exists $entry->{tags}    # And entries already logged
-                or grep { $_ ne "logged" } @{ $entry->{tags} }
+                or $match == 0
             )
             and exists $entry->{description}
           )
@@ -341,22 +343,36 @@ sub log_entries {
 
     print "Done.\n";
     if ( scalar(@entry_ids) > 0 ) {
-        $toggl->bulk_update_time_entries_tags(
-            {
-                time_entry_ids => \@entry_ids,
-                tags           => ["logged"],
-                tag_action     => "add",
-            }
-        );
+
+        foreach my $entry_id (@entry_ids) {
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["errored"],
+                    tag_action => "remove",
+                }
+            );
+
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["logged"],
+                    tag_action => "add",
+                }
+            );
+        }
     }
     if ( scalar(@failed_ids) > 0 ) {
-        $toggl->bulk_update_time_entries_tags(
-            {
-                time_entry_ids => \@failed_ids,
-                tags           => ["errored"],
-                tag_action     => "add",
-            }
-        );
+
+        foreach my $entry_id (@failed_ids) {
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["errored"],
+                    tag_action => "add",
+                }
+            );
+        }
     }
 
 }
