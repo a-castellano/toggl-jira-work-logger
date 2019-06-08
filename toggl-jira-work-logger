@@ -267,7 +267,8 @@ sub process_time_entries {
                 );
                 say "";
 
-            }
+                $issue_id = "";
+            }    # End For
         }
     }
 
