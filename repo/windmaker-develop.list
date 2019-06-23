@@ -1,2 +1,0 @@
-deb http://packages.windmaker.net/ any testing
-deb [ arch=amd64 ] http://packages.windmaker.net/ bionic main

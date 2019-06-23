@@ -35,7 +35,12 @@ sub make_api_call {
     my $headers   = $call->{headers};
     my $data      = $call->{data};
     my $json_data = "";
-    my $wrapper   = LWP::UserAgent->new(
+
+    my $api_response;
+    $api_response->{status}  = 1;
+    $api_response->{message} = q{};
+
+    my $wrapper = LWP::UserAgent->new(
         agent      => USER_AGENT,
         cookie_jar => {}
     );
@@ -56,24 +61,19 @@ sub make_api_call {
 
     my $response = $wrapper->request($request);
     if ( $response->is_success ) {
-        $response = $response->decoded_content;
-        my $json = parse_json($response);
-        return $json;
+        $response                = $response->decoded_content;
+        $api_response->{status}  = 1;
+        $api_response->{message} = parse_json($response);
     }
     else {
         my $r       = HTTP::Response->parse( $response->status_line );
         my $code    = $r->code;
         my $message = $r->message;
-        if ( $code == 403 ) {
-            say "Check your credentaials: API call returned $code: $message";
-            exit 1;
-        }
-        else {
-            say "An error ocurred: API call returned $code: $message";
-            exit 1;
-
-        }
+        $api_response->{status}  = 0;
+        $api_response->{code}    = $code;
+        $api_response->{message} = $message;
     }
+    return $api_response;
 }
 
 sub work_log {
@@ -120,6 +120,8 @@ sub work_log {
         }
     );
 
+    return $response;
+
 }
 
 sub process_time_entries {
@@ -129,26 +131,53 @@ sub process_time_entries {
     my $visibility      = shift;
     my $toggl           = shift;
     my $rounded_time    = shift;
+    my $minimum_time    = shift;
 
     my @entries = @{$entries};
 
     my %total_work_by_issue;
     my @processed_entries;
 
+    my $issue_id;
+    my $got_issue_id_from_description;
+
     for my $entry (@entries) {
 
+        my $match = grep( /^logged$/s, @{ $entry->{tags} } );
+
         if (
-            $entry->{duration} >= 300    # Ignore entries brief than 5 minutes
+            $entry->{duration} >=
+            $minimum_time    # Ignore entries brief than 5 minutes
             and (
                 !exists $entry->{tags}    # And entries already logged
-                or grep { $_ ne "logged" } @{ $entry->{tags} }
+                or $match == 0
             )
             and exists $entry->{description}
           )
         {
 
             if ( $entry->{description} =~ /^\s*([A-Z0-9]+-[0-9]+)/ ) {
-                my $issue_id = $1;
+                $issue_id                      = $1;
+                $got_issue_id_from_description = 1;
+            }
+            else {
+                # Maybe entry id is placed entry tags
+                my @candidate_ids =
+                  grep ( /^\s*([A-Z0-9]+-[0-9]+)$/, @{ $entry->{tags} } );
+                if ( scalar @candidate_ids > 1 ) {
+                    say "Issue: $entry->{description}";
+                    say "\tStarted at $entry->{start}.";
+                    say "\tEnded at $entry->{stop}.";
+                    say
+"This issue is related with more than one JIRA ID: @candidate_ids";
+                    say "Warning - This issue won't be logged.";
+                }
+                elsif ( scalar @candidate_ids == 1 ) {
+                    $issue_id                      = $candidate_ids[0];
+                    $got_issue_id_from_description = 0;
+                }
+            }
+            if ($issue_id) {
 
                 my $duration = int( $entry->{'duration'} / 60 );
 
@@ -158,7 +187,12 @@ sub process_time_entries {
                 $total_work_by_issue{$issue_id}{total_time} += $duration;
 
                 # Shows entry info to user
-                say "Issue $entry->{description}";
+                if ( $got_issue_id_from_description == 1 ) {
+                    say "Issue: $entry->{description}";
+                }
+                else {
+                    say "Issue: $issue_id $entry->{description}";
+                }
                 if ( grep { $_ eq "errored" } @{ $entry->{tags} } ) {
                     say
 "\t** ERRORED: This issue was already tried to be registered but it failed. **";
@@ -233,7 +267,8 @@ sub process_time_entries {
                 );
                 say "";
 
-            }
+                $issue_id = "";
+            }    # End For
         }
     }
 
@@ -289,46 +324,58 @@ sub log_entries {
     my @entry_ids;
     my @failed_ids;
     foreach my $entry (@processed_entries) {
-        my $no_errors = 0;
-        try {
-            work_log(
-                $jira_url,                       $jira_email,
-                $jira_user,                      $jira_password,
-                $entry->{issue_id},              $entry->{started},
-                $entry->{duration},              $entry->{description},
-                $entry->{issue_visibility_type}, $entry->{issue_visibility}
-            );
-            $no_errors = 1;
-        }
-        catch {
-            warn
-"Detected and error in $entry->{issue_id}: $_ \n\tThis error has been registered in your toggl dashboard.";
-            $no_errors = 0;
-            push( @failed_ids, int( $entry->{id} ) );
-        };
+        my $no_errors         = 0;
+        my $work_log_response = work_log(
+            $jira_url,                       $jira_email,
+            $jira_user,                      $jira_password,
+            $entry->{issue_id},              $entry->{started},
+            $entry->{duration},              $entry->{description},
+            $entry->{issue_visibility_type}, $entry->{issue_visibility}
+        );
+        $no_errors = $work_log_response->{status};
+
         if ($no_errors) {
             push( @entry_ids, int( $entry->{id} ) );
+        }
+        else {
+            say
+"Detected and error in $entry->{issue_id}: $work_log_response->{message}\n\tThis error has been registered in your toggl dashboard.";
+            push( @failed_ids, int( $entry->{id} ) );
         }
     }
 
     print "Done.\n";
     if ( scalar(@entry_ids) > 0 ) {
-        $toggl->bulk_update_time_entries_tags(
-            {
-                time_entry_ids => \@entry_ids,
-                tags           => ["logged"],
-                tag_action     => "add",
-            }
-        );
+
+        foreach my $entry_id (@entry_ids) {
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["errored"],
+                    tag_action => "remove",
+                }
+            );
+
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["logged"],
+                    tag_action => "add",
+                }
+            );
+        }
     }
     if ( scalar(@failed_ids) > 0 ) {
-        $toggl->bulk_update_time_entries_tags(
-            {
-                time_entry_ids => \@failed_ids,
-                tags           => ["errored"],
-                tag_action     => "add",
-            }
-        );
+
+        foreach my $entry_id (@failed_ids) {
+            $toggl->update_time_entry_by_id(
+                $entry_id,
+                {
+                    tags       => ["errored"],
+                    tag_action => "add",
+                }
+            );
+        }
     }
 
 }
@@ -358,6 +405,7 @@ Arguments:
 	--jira-api-token=your-jira-api-token
 	--toggl-api-token=your-jira-api-token
 	--rounded-time=minutes
+	--minimum-time=minute                        By default it will be 5 minutes, behind this time time entry will be skipped.
 	--visibility-owner=group-or-role             Visibility is public by default.
 	--visibility-owner-name=group-or-role-name   When visibility-owner is set
 
@@ -416,6 +464,7 @@ sub get_variables {
         'rounded-time'          => $ENV{'ROUNDED_TIME'},
         'visibility-owner'      => $ENV{'VISIBILITY_OWNER'},
         'visibility-owner-name' => $ENV{'VISIBILITY_OWNER_NAME'},
+        'minimum-time'          => $ENV{'MINIMUM-TIME'},
         'start-date'            => undef,
         'end-date'              => undef,
     };
@@ -432,6 +481,7 @@ sub get_variables {
         'rounded-time=i'          => \$variables->{'rounded-time'},
         'visibility-owner=s'      => \$variables->{'visibility-owner'},
         'visibility-owner-name=s' => \$variables->{'visibility-owner-name'},
+        'minimum-time=i'          => \$variables->{'minimum-time'},
         'start-date=s'            => \$variables->{'start-date'},
         'end-date=s'              => \$variables->{'end-date'},
         'today'                   => \$variables->{'today'},
@@ -442,6 +492,13 @@ sub get_variables {
 
     if ( defined($help) ) {
         usage();
+    }
+
+    if ( !$variables->{'minimum-time'} ) {
+        $variables->{'minimum-time'} = 300;
+    }
+    else {
+        $variables->{'minimum-time'} = $variables->{'minimum-time'} * 60;
     }
 
     # Check if special dates are defined
@@ -503,6 +560,15 @@ sub get_variables {
         }
     }
     else {
+
+        # Check if dates are defined
+        if (   ( !( $variables->{'start-date'} ) )
+            or ( !( $variables->{'end-date'} ) ) )
+        {
+            say "'start-date' and 'end-date' must be defined.";
+            exit 1;
+        }
+
         my @dates;
 
         # Provided dates must be valid
@@ -624,12 +690,14 @@ do {
         \@entries,
         $variables->{'visibility-owner'},
         $variables->{'visibility-owner-name'},
-        $toggl, $variables->{'rounded-time'}
+        $toggl,
+        $variables->{'rounded-time'},
+        $variables->{'minimum-time'}
     );
 
     if ( scalar @processed_entries ) {
 
-        print "Sending Worklogs...";
+        say "Sending Worklogs...";
 
         log_entries(
             \@processed_entries,       $toggl,

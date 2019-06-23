@@ -1,10 +1,17 @@
 FROM ubuntu:bionic
 MAINTAINER Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>
 
-RUN apt-get update -qq && apt-get install -qq -o=Dpkg::Use-Pty=0 -y gnupg ca-certificates --no-install-recommends && rm -rf /var/lib/apt/lists/*
-COPY repo/windmaker-develop.list /etc/apt/sources.list.d/windmaker-develop.list
-COPY repo/WINDMAKER-GPG-KEY.pub /tmp/WINDMAKER-GPG-KEY.pub
-RUN apt-key add /tmp/WINDMAKER-GPG-KEY.pub
-ARG CACHE_TS=default_ts
-RUN apt-get update -qq
-RUN apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger --no-install-recommends && rm -rf /var/lib/apt/lists/*
+RUN \
+ apt-get update -qq && \
+ apt-get install -qq -o=Dpkg::Use-Pty=0 -y gnupg ca-certificates wget --no-install-recommends && \
+ wget -O - http://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | apt-key add - && \
+ wget -O - http://repo-bionic.windmaker.net/repo-bionic.windmaker.net.gpg-key.pub | apt-key add - && \
+ apt-get purge -qq -o=Dpkg::Use-Pty=0 -y gnupg wget && \
+ apt-get autoremove -qq -o=Dpkg::Use-Pty=0 -y && \
+ apt-get autoclean -qq -o=Dpkg::Use-Pty=0 -y && \
+ echo "deb http://packages.windmaker.net/ any testing" >> /etc/apt/sources.list && \
+ echo "deb [arch=amd64] http://packages.windmaker.net/ bionic main" >> /etc/apt/sources.list && \
+ apt-get update -qq && \
+ apt-get install -qq -o=Dpkg::Use-Pty=0 -y toggl-jira-work-logger --no-install-recommends && \
+ apt-get purge -y --auto-remove && \
+ rm -rf /var/lib/apt/lists/*
