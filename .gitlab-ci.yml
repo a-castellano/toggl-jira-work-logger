@@ -6,7 +6,7 @@ dev_package:
   stage: build
   image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
   before_script:
-    - apt-get udate
+    - apt-get update
     - apt-get install -y curl
   script:
     - dpkg-buildpackage -uc -b
@@ -25,7 +25,7 @@ package:
       - /^v-.*$/
   image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
   before_script:
-    - apt-get udate
+    - apt-get update
     - apt-get install -y curl
   script:
     - dpkg-buildpackage -uc -b
