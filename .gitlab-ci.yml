@@ -4,7 +4,7 @@ stages:
 
 dev_package:
     stage: build
-    image: acastellano/debbuilder
+    image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
     script:
         - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
         - dpkg-buildpackage -uc -b
@@ -12,7 +12,7 @@ dev_package:
         - mv ../*.deb build/
         - PACKAGE=$(ls build)
         - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/file/toggl-jira-work-logger || exit 1
+        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal-testing/file/toggl-jira-work-logger || exit 1
         - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/snapshots || exit 1"
         - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"testing\", \"Name\": \"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any || exit 1"
     artifacts:
@@ -23,7 +23,7 @@ package:
     stage: build
     only:
         - /^v-.*$/
-    image: acastellano/debbuilder
+    image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
     script:
         - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
         - dpkg-buildpackage -uc -b
@@ -31,16 +31,14 @@ package:
         - mv ../*.deb build/
         - PACKAGE=$(ls build)
         - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/file/toggl-jira-work-logger || exit 1
-        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any/snapshots || exit 1"
-        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"main\", \"Name\": \"packages-windmaker-any-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any || exit 1"
+        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal/file/toggl-jira-work-logger || exit 1
     artifacts:
         paths:
             - build/*
 
 dev_docker_build:
     stage: docker_build
-    image: docker:stable
+    image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
     script:
         - VERSION=$(cat VERSION)
         - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
@@ -56,7 +54,7 @@ release_docker_build:
     stage: docker_build
     only:
         - /^v-.*$/
-    image: docker:stable
+    image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
     script:
         - VERSION=$(cat VERSION)
         - docker build --no-cache -t toggl-jira-work-logger -f Dockerfile .
