@@ -1,67 +1,69 @@
 stages:
-    - build
-    - docker_build
+  - build
+  - docker_build
 
 dev_package:
-    stage: build
-    image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
-    script:
-        - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
-        - dpkg-buildpackage -uc -b
-        - mkdir build
-        - mv ../*.deb build/
-        - PACKAGE=$(ls build)
-        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal-testing/file/toggl-jira-work-logger || exit 1
-        - "curl -X POST -H 'Content-Type: application/json' --data '{\"Name\":\"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}' http://packages.windmaker.net:8000/api/repos/packages-windmaker-any-testing/snapshots || exit 1"
-        - "curl -X PUT -H 'Content-Type: application/json' --data '{\"Snapshots\": [{\"Component\": \"testing\", \"Name\": \"packages-windmaker-any-testing-'\"$SNAPSHOTDATE\"'\"}]}' http://packages.windmaker.net:8000/api/publish/:./any || exit 1"
-    artifacts:
-        paths:
-            - build/*
+  stage: build
+  image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
+  before_script:
+    - apt-get udate
+    - apt-get install -y curl
+  script:
+    - dpkg-buildpackage -uc -b
+    - mkdir build
+    - mv ../*.deb build/
+    - PACKAGE=$(ls build)
+    - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
+    - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal-testing/file/toggl-jira-work-logger || exit 1
+  artifacts:
+    paths:
+      - build/*
 
 package:
-    stage: build
-    only:
-        - /^v-.*$/
-    image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
-    script:
-        - SNAPSHOTDATE=$(date +%G%m%d%k%M%S)
-        - dpkg-buildpackage -uc -b
-        - mkdir build
-        - mv ../*.deb build/
-        - PACKAGE=$(ls build)
-        - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
-        - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal/file/toggl-jira-work-logger || exit 1
-    artifacts:
-        paths:
-            - build/*
+  stage: build
+  only:
+      - /^v-.*$/
+  image: registry.windmaker.net:5005/a-castellano/limani/base_deb_perl_builder:202104052102
+  before_script:
+    - apt-get udate
+    - apt-get install -y curl
+  script:
+    - dpkg-buildpackage -uc -b
+    - mkdir build
+    - mv ../*.deb build/
+    - PACKAGE=$(ls build)
+    - curl -X POST -F file=@build/$PACKAGE http://packages.windmaker.net:8000/api/files/toggl-jira-work-logger || exit 1
+    - curl -X POST http://packages.windmaker.net:8000/api/repos/packages-windmaker-focal/file/toggl-jira-work-logger || exit 1
+  artifacts:
+    paths:
+      - build/*
 
 dev_docker_build:
-    stage: docker_build
-    image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
-    script:
-        - VERSION=$(cat VERSION)
-        - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
-        - docker login --username acastellano --password $DOCKERHUBPASSWORD
-        - docker create --name=toggl-jira-work-logger-develop -i toggl-jira-work-logger-develop
-        - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger-develop acastellano/toggl-jira-work-logger-develop
-        - docker push acastellano/toggl-jira-work-logger-develop
-        - docker stop toggl-jira-work-logger-develop
-        - docker rm toggl-jira-work-logger-develop
-        - docker rmi toggl-jira-work-logger-develop
+  stage: docker_build
+  image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
+  script:
+    - VERSION=$(cat VERSION)
+    - docker build --no-cache -t toggl-jira-work-logger-develop -f Dockerfile-develop .
+    - docker login --username acastellano --password $DOCKERHUBPASSWORD
+    - docker create --name=toggl-jira-work-logger-develop -i toggl-jira-work-logger-develop
+    - docker commit -m "Develop image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger-develop acastellano/toggl-jira-work-logger-develop
+    - docker push acastellano/toggl-jira-work-logger-develop
+    - docker stop toggl-jira-work-logger-develop
+    - docker rm toggl-jira-work-logger-develop
+    - docker rmi toggl-jira-work-logger-develop
 
 release_docker_build:
-    stage: docker_build
-    only:
-        - /^v-.*$/
-    image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
-    script:
-        - VERSION=$(cat VERSION)
-        - docker build --no-cache -t toggl-jira-work-logger -f Dockerfile .
-        - docker login --username acastellano --password $DOCKERHUBPASSWORD
-        - docker create --name=toggl-jira-work-logger -i toggl-jira-work-logger
-        - docker commit -m "Release image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger acastellano/toggl-jira-work-logger
-        - docker push acastellano/toggl-jira-work-logger
-        - docker stop toggl-jira-work-logger
-        - docker rm toggl-jira-work-logger
-        - docker rmi toggl-jira-work-logger
+  stage: docker_build
+  only:
+    - /^v-.*$/
+  image: registry.windmaker.net:5005/a-castellano/limani/base_docker:202104052102
+  script:
+    - VERSION=$(cat VERSION)
+    - docker build --no-cache -t toggl-jira-work-logger -f Dockerfile .
+    - docker login --username acastellano --password $DOCKERHUBPASSWORD
+    - docker create --name=toggl-jira-work-logger -i toggl-jira-work-logger
+    - docker commit -m "Release image for version $VERSION" -a "Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>" toggl-jira-work-logger acastellano/toggl-jira-work-logger
+    - docker push acastellano/toggl-jira-work-logger
+    - docker stop toggl-jira-work-logger
+    - docker rm toggl-jira-work-logger
+    - docker rmi toggl-jira-work-logger
