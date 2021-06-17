@@ -546,15 +546,16 @@ sub get_variables {
                     # 6 Saturday
                     $variables->{'start-date'} =
                       $current_day->clone()->subtract( days => $wday );
-                    $variables->{'end-date'} =
-                      $current_day->clone()->add( days => ( 6 - $wday ) );
+                    # https://github.com/a-castellano/toggl-jira-work-logger/issues/11
+                    # Process only to current day
+                    $variables->{'end-date'} = $current_day;
                 }
                 else {    # month
                     $variables->{'start-date'} =
                       $current_day->clone()->subtract( days => $mday - 1 );
-                    $variables->{'end-date'} =
-                      $variables->{'start-date'}->clone()->add( months => 1 )
-                      ->subtract( days => 1 );
+                    # https://github.com/a-castellano/toggl-jira-work-logger/issues/11
+                    # Process only to current day
+                    $variables->{'end-date'} = $current_day;
                 }
             }
         }
