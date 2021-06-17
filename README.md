@@ -32,13 +32,12 @@ Usage is almost the same for these ways, differences will be explained below.
 
 ## Installation
 
-### Install from repository (Tested on Ubuntu Xenial and Bionic only)
+### Install from repository (Available only on Ubuntu Focal)
 
 As I said before this script uses another Perl library from my own. If you are using Ubuntu Xenial or Bionic there is a package available which includes all dependencies:
 ```bash
 wget -O - https://packages.windmaker.net/WINDMAKER-GPG-KEY.pub | sudo apt-key add -
-sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ $(lsb_release -cs) main
-sudo add-apt-repository "deb [ arch=amd64 ] http://packages.windmaker.net/ any main"
+sudo add-apt-repository "deb http://packages.windmaker.net/ focal main"
 sudo apt-get update
 sudo apt-get install toggl-jira-work-logger
 ```
