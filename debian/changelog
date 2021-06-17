@@ -1,3 +1,10 @@
+toggl-jira-work-logger (1.0.0-1) unstable; urgency=medium
+
+  * When you launch toggl-jira-work-logger with --week or --month args it processes future time entries.
+  * https://github.com/a-castellano/toggl-jira-work-logger/issues/11
+
+ -- Álvaro Castellano Vela <alvaro.castellano.vela@gmail.com>  Thu, 17 Jun 2019 21:55:00 +0200
+
 toggl-jira-work-logger (0.9.0-1) unstable; urgency=medium
 
   * Update to Focal
