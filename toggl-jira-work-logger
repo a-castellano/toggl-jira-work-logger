@@ -350,6 +350,7 @@ sub log_entries {
         foreach my $entry_id (@entry_ids) {
             $toggl->update_time_entry_by_id(
                 $entry_id,
+                $toggl->default_workspace_id(),
                 {
                     tags       => ["errored"],
                     tag_action => "remove",
@@ -358,6 +359,7 @@ sub log_entries {
 
             $toggl->update_time_entry_by_id(
                 $entry_id,
+                $toggl->default_workspace_id(),
                 {
                     tags       => ["logged"],
                     tag_action => "add",
@@ -370,6 +372,7 @@ sub log_entries {
         foreach my $entry_id (@failed_ids) {
             $toggl->update_time_entry_by_id(
                 $entry_id,
+                $toggl->default_workspace_id(),
                 {
                     tags       => ["errored"],
                     tag_action => "add",
